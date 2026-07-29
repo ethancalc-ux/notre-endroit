@@ -392,7 +392,7 @@ function renderAccueil() {
 
     <div class="uber-card" id="btn-uber-quick" role="button" tabindex="0">
       <span class="uber-icon"><svg viewBox="0 0 48 48" fill="none"><path d="M8 20h32l-3 14a5 5 0 01-5 4H16a5 5 0 01-5-4z" fill="var(--surface)"/><path d="M14 20a10 10 0 0120 0" stroke="var(--bordeaux)" stroke-width="3" fill="none"/><circle cx="19" cy="30" r="2" fill="var(--bordeaux)"/><circle cx="29" cy="30" r="2" fill="var(--bordeaux)"/></svg></span>
-      <span>Envie d'un Uber Eats à deux ?</span>
+      <span>Pssshht ! Clique ici pour un petit repas haha</span>
     </div>
 
     <div class="section speech-quote organic-card tilt-1" style="max-width:520px;margin:var(--space-6) auto 0;">
