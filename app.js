@@ -1117,6 +1117,7 @@ const JEUX_LISTE = [
   { id: 'question-du-jour', icone: '💬', titre: 'Question du jour',           texte: 'Une par jour, révélée à deux' },
   { id: 'tu-preferes',   icone: '↔️', titre: 'Tu préfères ?',               texte: 'Match parfait ou pas ?' },
   { id: 'qui-connait',   icone: '🧠', titre: 'Qui connaît le mieux l\'autre ?', texte: '5 questions, un score sur 5' },
+  { id: 'devine-reponse', icone: '🔮', titre: 'Devine ma réponse',           texte: 'Un secret, une devinette' },
   { id: 'roue',          icone: '🎡', titre: 'La roue de nos envies',       texte: 'Fais tourner, on suit ce qui sort' },
   { id: 'trone',         icone: '👑', titre: "Le Trône d'Or",               texte: 'Pour rire, sans se prendre au sérieux' },
   { id: 'compatibilite', icone: '💞', titre: 'Notre compatibilité du jour', texte: '100% pour rire, amour 100% vrai' },
@@ -1141,6 +1142,7 @@ function renderJeuxDetail(sub) {
   if (sub === 'question-du-jour') return renderJeuQuestionDuJour();
   if (sub === 'tu-preferes') return renderJeuTuPreferes();
   if (sub === 'qui-connait') return renderJeuQuiConnait();
+  if (sub === 'devine-reponse') return renderJeuDevineReponse();
   if (sub === 'roue') return renderJeuRoue();
   if (sub === 'trone') return renderJeuTrone();
   if (sub === 'compatibilite') return renderJeuCompatibilite();
@@ -1149,6 +1151,126 @@ function renderJeuxDetail(sub) {
 
 function jeuxBackLink() {
   return `<a href="#/jeux" class="btn btn-ghost btn-sm" style="margin-bottom:24px;">← Retour aux jeux</a>`;
+}
+
+/* --- Jeu : Devine ma réponse (synchronisé via Firebase) --------------------- */
+function renderJeuDevineReponse() {
+  const page = el(`<div class="page">
+    ${jeuxBackLink()}
+    <div class="page-header"><span class="eyebrow">🔮</span><h1>Devine ma réponse</h1></div>
+    <div id="dr-root" style="max-width:480px;margin:0 auto;text-align:center;"></div>
+  </div>`);
+  const root = page.querySelector('#dr-root');
+  const db = firebaseDB();
+  if (!db) {
+    root.innerHTML = emptyState('🔮', "Il manque la configuration Firebase (déjà utilisée pour le Puissance 4) pour activer ce jeu, regarde le README.");
+    return page;
+  }
+
+  const jour = todayISO();
+  const banque = D.jeux.devineReponse;
+  const graineJour = Array.from(jour).reduce((h, c) => h * 31 + c.charCodeAt(0), 0);
+  const question = banque[Math.abs(graineJour) % banque.length];
+  // Le rôle "répondant" alterne chaque jour, pour que ce soit équitable
+  const repondant = Math.abs(graineJour) % 2 === 0 ? 'ethan' : 'lorvencia';
+  const ref = db.ref(`${jeuxCle()}/devineReponse/${jour}`);
+  const scoreRef = db.ref(`${jeuxCle()}/devineReponse/scoreCumulatif`);
+
+  root.innerHTML = `<p style="color:var(--ink-soft);">Connexion…</p>`;
+
+  getIdentite(moi => {
+    const autre = moi === 'ethan' ? 'lorvencia' : 'ethan';
+    const jeSuisRepondant = moi === repondant;
+    const nomRepondant = repondant === 'ethan' ? 'Ethan' : 'Lorvencia';
+
+    let scoreCumule = { ethan: 0, lorvencia: 0 };
+    scoreRef.on('value', snap => { scoreCumule = snap.val() || { ethan: 0, lorvencia: 0 }; });
+
+    function paint(val) {
+      val = val || {};
+
+      if (!val.reponse) {
+        if (jeSuisRepondant) {
+          root.innerHTML = `
+            <div class="card">
+              <p style="font-weight:600;margin-bottom:14px;">${escapeHtml(question)}</p>
+              <input type="text" id="dr-reponse" style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border-soft);font-family:var(--font-body);text-align:center;" placeholder="Ta réponse, en secret">
+              <button class="btn btn-primary btn-sm" id="dr-envoyer" style="margin-top:12px;width:100%;">Valider en secret</button>
+            </div>`;
+          root.querySelector('#dr-envoyer').addEventListener('click', () => {
+            const texte = root.querySelector('#dr-reponse').value.trim();
+            if (!texte) return;
+            ref.child('reponse').set(texte);
+          });
+        } else {
+          root.innerHTML = `<div class="card"><p>${nomRepondant} n'a pas encore répondu en secret. Reviens un peu plus tard 🤍</p></div>`;
+        }
+        return;
+      }
+
+      if (jeSuisRepondant) {
+        if (!val.correct && val.correct !== false) {
+          if (!val.deviné) {
+            root.innerHTML = `<div class="card"><p>Ta réponse secrète est enregistrée. En attente que l'autre devine…</p></div>`;
+          } else {
+            root.innerHTML = `
+              <div class="card">
+                <p style="font-weight:600;">${escapeHtml(question)}</p>
+                <p style="margin:10px 0;"><strong>Ta réponse :</strong> ${escapeHtml(val.reponse)}</p>
+                <p style="margin-bottom:14px;"><strong>Sa devinette :</strong> ${escapeHtml(val.deviné)}</p>
+                <p style="font-size:.85rem;color:var(--ink-soft);margin-bottom:10px;">A-t-il/elle trouvé ?</p>
+                <div style="display:flex;gap:10px;justify-content:center;">
+                  <button class="btn btn-primary btn-sm" id="dr-correct">✅ Trouvé</button>
+                  <button class="btn btn-ghost btn-sm" id="dr-incorrect">❌ Pas cette fois</button>
+                </div>
+              </div>`;
+            root.querySelector('#dr-correct').addEventListener('click', () => {
+              ref.child('correct').set(true);
+              scoreRef.child(autre).transaction(n => (n || 0) + 1);
+            });
+            root.querySelector('#dr-incorrect').addEventListener('click', () => ref.child('correct').set(false));
+          }
+        } else {
+          afficherResultatFinal();
+        }
+      } else {
+        if (!val.deviné) {
+          root.innerHTML = `
+            <div class="card">
+              <p style="font-weight:600;margin-bottom:4px;">${escapeHtml(question)}</p>
+              <p style="color:var(--ink-soft);font-size:.85rem;margin-bottom:14px;">${nomRepondant} a répondu en secret. Devine sa réponse !</p>
+              <input type="text" id="dr-devine" style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border-soft);font-family:var(--font-body);text-align:center;">
+              <button class="btn btn-primary btn-sm" id="dr-envoyer-devine" style="margin-top:12px;width:100%;">Valider ma devinette</button>
+            </div>`;
+          root.querySelector('#dr-envoyer-devine').addEventListener('click', () => {
+            const texte = root.querySelector('#dr-devine').value.trim();
+            if (!texte) return;
+            ref.child('deviné').set(texte);
+          });
+        } else if (val.correct === undefined) {
+          root.innerHTML = `<div class="card"><p>Ta devinette est envoyée. ${nomRepondant} doit encore dire si c'était juste 🤍</p></div>`;
+        } else {
+          afficherResultatFinal();
+        }
+      }
+
+      function afficherResultatFinal() {
+        root.innerHTML = `
+          <div class="card">
+            <p style="font-weight:600;">${escapeHtml(question)}</p>
+            <p style="margin:10px 0;"><strong>Réponse :</strong> ${escapeHtml(val.reponse)}</p>
+            <p style="margin-bottom:10px;"><strong>Devinette :</strong> ${escapeHtml(val.deviné)}</p>
+            <div style="font-family:var(--font-display);font-size:1.2rem;color:var(--bordeaux);font-weight:700;">
+              ${val.correct ? '🎉 Deviné !' : 'Pas cette fois, la prochaine sera la bonne'}
+            </div>
+            <p style="font-size:.8rem;color:var(--ink-soft);margin-top:12px;">Score cumulé : Ethan ${scoreCumule.ethan || 0} · Lorvencia ${scoreCumule.lorvencia || 0}</p>
+          </div>`;
+      }
+    }
+    ref.on('value', snap => paint(snap.val()));
+  });
+
+  return page;
 }
 
 /* --- Jeu : Qui connaît le mieux l'autre ? (synchronisé via Firebase) ------- */
