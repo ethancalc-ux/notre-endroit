@@ -1115,6 +1115,7 @@ function renderPuissance4() {
    ====================================================================== */
 const JEUX_LISTE = [
   { id: 'question-du-jour', icone: '💬', titre: 'Question du jour',           texte: 'Une par jour, révélée à deux' },
+  { id: 'tu-preferes',   icone: '↔️', titre: 'Tu préfères ?',               texte: 'Match parfait ou pas ?' },
   { id: 'roue',          icone: '🎡', titre: 'La roue de nos envies',       texte: 'Fais tourner, on suit ce qui sort' },
   { id: 'trone',         icone: '👑', titre: "Le Trône d'Or",               texte: 'Pour rire, sans se prendre au sérieux' },
   { id: 'compatibilite', icone: '💞', titre: 'Notre compatibilité du jour', texte: '100% pour rire, amour 100% vrai' },
@@ -1137,6 +1138,7 @@ function renderJeuxListe() {
 
 function renderJeuxDetail(sub) {
   if (sub === 'question-du-jour') return renderJeuQuestionDuJour();
+  if (sub === 'tu-preferes') return renderJeuTuPreferes();
   if (sub === 'roue') return renderJeuRoue();
   if (sub === 'trone') return renderJeuTrone();
   if (sub === 'compatibilite') return renderJeuCompatibilite();
@@ -1145,6 +1147,77 @@ function renderJeuxDetail(sub) {
 
 function jeuxBackLink() {
   return `<a href="#/jeux" class="btn btn-ghost btn-sm" style="margin-bottom:24px;">← Retour aux jeux</a>`;
+}
+
+/* --- Jeu : Tu préfères ? (synchronisé via Firebase) ------------------------- */
+function renderJeuTuPreferes() {
+  const page = el(`<div class="page">
+    ${jeuxBackLink()}
+    <div class="page-header"><span class="eyebrow">↔️</span><h1>Tu préfères ?</h1></div>
+    <div id="tp-root" style="max-width:480px;margin:0 auto;text-align:center;"></div>
+  </div>`);
+  const root = page.querySelector('#tp-root');
+  const db = firebaseDB();
+  if (!db) {
+    root.innerHTML = emptyState('↔️', "Il manque la configuration Firebase (déjà utilisée pour le Puissance 4) pour activer ce jeu, regarde le README.");
+    return page;
+  }
+
+  const jour = todayISO();
+  const paires = D.jeux.tuPreferes;
+  const index = Math.abs(Array.from(jour).reduce((h, c) => h * 31 + c.charCodeAt(0), 0)) % paires.length;
+  const paire = paires[index];
+  const ref = db.ref(`${jeuxCle()}/tuPreferes/${jour}`);
+
+  root.innerHTML = `<p style="color:var(--ink-soft);">Connexion…</p>`;
+
+  getIdentite(moi => {
+    const autre = moi === 'ethan' ? 'lorvencia' : 'ethan';
+
+    function paint(val) {
+      val = val || {};
+      const choix = val.choix || {};
+      const monChoix = choix[moi];
+      const sonChoix = choix[autre];
+
+      if (!monChoix) {
+        root.innerHTML = `
+          <div class="card">
+            <p style="font-weight:600;margin-bottom:16px;">Tu préfères…</p>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <button class="btn btn-ghost" data-choix="a">${escapeHtml(paire.a)}</button>
+              <button class="btn btn-ghost" data-choix="b">${escapeHtml(paire.b)}</button>
+            </div>
+          </div>`;
+        root.querySelectorAll('[data-choix]').forEach(btn => btn.addEventListener('click', () => {
+          ref.child(`choix/${moi}`).set(btn.dataset.choix);
+        }));
+      } else if (!sonChoix) {
+        root.innerHTML = `
+          <div class="card">
+            <p style="font-weight:600;">Ton choix : ${escapeHtml(monChoix === 'a' ? paire.a : paire.b)}</p>
+            <p style="color:var(--ink-soft);font-size:.9rem;margin-top:10px;">En attente de l'autre…</p>
+          </div>`;
+      } else {
+        const match = monChoix === sonChoix;
+        root.innerHTML = `
+          <div class="card ${match ? 'fade-rise' : ''}">
+            <div class="place-meta" style="justify-content:center;margin-bottom:10px;">
+              <span>Toi : ${escapeHtml(monChoix === 'a' ? paire.a : paire.b)}</span>
+            </div>
+            <div class="place-meta" style="justify-content:center;margin-bottom:14px;">
+              <span>${autre === 'ethan' ? 'Ethan' : 'Lorvencia'} : ${escapeHtml(sonChoix === 'a' ? paire.a : paire.b)}</span>
+            </div>
+            <div style="font-family:var(--font-display);font-size:1.3rem;color:var(--bordeaux);font-weight:700;">
+              ${match ? '💞 Match parfait' : '🌈 Deux envies, deux fois plus d\'idées'}
+            </div>
+          </div>`;
+      }
+    }
+    ref.on('value', snap => paint(snap.val()));
+  });
+
+  return page;
 }
 
 /* --- Jeu : Question du jour (synchronisé via Firebase) --------------------- */
