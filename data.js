@@ -634,6 +634,21 @@ const SITE_DATA = {
      NOS PETITS JEUX — contenu des mini-jeux jouables tout de suite.
      ==================================================================== */
   jeux: {
+    // Question du jour : une par jour, choisie automatiquement dans l'ordre
+    questionsDuJour: [
+      "Quel moment avec moi t'a fait sourire récemment ?",
+      "Quelle petite habitude chez moi te rassure ?",
+      "Quel endroit aimerais-tu découvrir avec moi ?",
+      "Quel repas représente le mieux notre couple ?",
+      "Quelle chanson te fait penser à nous ?",
+      "Quel souvenir voudrais-tu revivre une seconde fois ?",
+      "Quelle petite attention te ferait plaisir cette semaine ?",
+      "À quoi ressemblerait notre dimanche parfait ?",
+      "Quel est le fou rire que tu n'oublieras jamais ?",
+      "Quelle qualité de l'autre admires-tu le plus ?",
+      "Quel projet aimerais-tu réaliser ensemble cette année ?",
+      "Quelle photo de nous préfères-tu actuellement ?",
+    ],
     // La roue de nos envies : ajoute/enlève des activités librement
     roue: [
       "🎬 Regarder un film", "📞 Faire un appel vidéo", "🍽️ Choisir un futur resto",
