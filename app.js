@@ -493,8 +493,8 @@ function renderAccueil() {
 
   page.querySelector('#univers-secondaire').innerHTML = ROUTES
     .filter(r => !['accueil', 'ouvrir-quand', 'jeux'].includes(r.path))
-    .map(r => `
-      <a class="mini-card" href="#/${r.path}">
+    .map((r, i) => `
+      <a class="organic-card tilt-${i % 4}" href="#/${r.path}">
         <span class="mini-card-icon">${ICONES[r.path] || `<span style="font-size:1.6rem;">${r.emoji}</span>`}</span>
         <h3>${escapeHtml(r.label)}</h3>
         <p>${escapeHtml(r.desc || '')}</p>
