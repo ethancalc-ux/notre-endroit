@@ -129,10 +129,25 @@ const SITE_DATA = {
      première de la liste est sélectionnée par défaut.
      Format de la date : "AAAA-MM-JJTHH:MM:00"
      ==================================================================== */
-  compteurs: [
-    { id: "rencontre", label: "avant qu'on se retrouve", date: "2026-09-03T00:00:00" },
-    { id: "lille",     label: "avant Lille, ensemble",     date: "2026-09-01T00:00:00" },
-  ],
+  /* ====================================================================
+     DEPUIS NOTRE DERNIER CÂLIN — remplace l'ancien compte à rebours.
+     Le site compte le temps ÉCOULÉ depuis cette date, en continu.
+     Format : "AAAA-MM-JJTHH:MM:00+02:00" (garde le fuseau +02:00, heure
+     d'été en France ; passe à +01:00 en hiver si tu veux être exact).
+     ==================================================================== */
+  derniereRencontre: "2026-07-12T00:00:00+02:00",
+
+  /* ====================================================================
+     LA DISTANCE ENTRE NOUS — juste les noms de ville et un chiffre
+     approximatif, jamais d'adresse précise (site public sur GitHub).
+     ==================================================================== */
+  distanceCouple: {
+    villeA: "Villenave-d'Ornon",
+    villeB: "Limoges",
+    km: 220,
+    avatarA: "avatar-ethan.png",
+    avatarB: "avatar-lorvencia.png",
+  },
 
   /* ====================================================================
      PHRASES DU CÂLIN — s'affichent au hasard quand elle clique sur
