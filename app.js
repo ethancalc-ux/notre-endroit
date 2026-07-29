@@ -371,8 +371,9 @@ function renderAccueil() {
     <p class="weather-note" style="max-width:520px;margin:0 auto;">Peu importe la météo dehors, j'espère qu'il fera toujours un peu plus beau dans ton cœur.</p>
 
     <div class="section">
-      <div class="section-title" style="justify-content:center;"><h2 style="font-size:1rem;color:var(--ink-soft);font-family:var(--font-body);font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Explorer notre univers</h2></div>
-      <div class="page-card-grid" id="page-card-grid"></div>
+      <div class="section-title" style="justify-content:center;"><h2 class="univers-titre">Tout notre petit univers <span style="color:var(--gold);">♥</span></h2></div>
+      <div class="univers-priority-row" id="univers-priority"></div>
+      <div class="univers-secondary-grid" id="univers-secondaire"></div>
     </div>
   </div>`);
 
@@ -435,13 +436,56 @@ function renderAccueil() {
     btn.addEventListener('click', () => FUN_WIDGETS[btn.dataset.fun].onClick());
   });
 
-  // Cartes des pages — toutes les pages du site (ROUTES, sauf l'accueil
-  // lui-même), avec icône, titre et petite description, façon vitrine.
-  page.querySelector('#page-card-grid').innerHTML = ROUTES
-    .filter(r => r.path !== 'accueil')
+  // --- Bento des widgets : 2 grandes cartes illustrées + le reste en grille ---
+  const ICONES = {
+    vlog: `<svg viewBox="0 0 48 48" fill="none"><rect x="6" y="14" width="26" height="20" rx="5" fill="var(--blush-soft)"/><path d="M32 20l9-5v18l-9-5" fill="var(--gold-soft)"/><polygon points="16,20 16,28 23,24" fill="var(--bordeaux)"/></svg>`,
+    lille: `<svg viewBox="0 0 48 48" fill="none"><path d="M24 6c-7 0-12 5.5-12 12 0 9 12 24 12 24s12-15 12-24c0-6.5-5-12-12-12z" fill="var(--blush)"/><circle cx="24" cy="18" r="5" fill="var(--surface)"/></svg>`,
+    'tenue-sport': `<svg viewBox="0 0 48 48" fill="none"><path d="M8 14l8-4 8 4 8-4 8 4-3 8-5-2v14H16V20l-5 2z" fill="var(--gold-soft)"/></svg>`,
+    youtube: `<svg viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="36" height="24" rx="7" fill="var(--blush-soft)"/><polygon points="20,17 20,27 30,22" fill="var(--bordeaux)"/></svg>`,
+    'mot-du-jour': `<svg viewBox="0 0 48 48" fill="none"><path d="M14 34l16-16 4 4-16 16H14v-4z" fill="var(--gold-soft)"/><path d="M30 10l3 3-4 4-3-3z" fill="var(--bordeaux)"/><circle cx="12" cy="12" r="2" fill="var(--gold)"/></svg>`,
+    puissance4: `<svg viewBox="0 0 48 48" fill="none"><rect x="6" y="6" width="36" height="36" rx="8" fill="var(--blush-soft)"/>
+      <circle cx="15" cy="15" r="4" fill="var(--surface)"/><circle cx="24" cy="15" r="4" fill="var(--bordeaux)"/><circle cx="33" cy="15" r="4" fill="var(--surface)"/>
+      <circle cx="15" cy="24" r="4" fill="var(--gold)"/><circle cx="24" cy="24" r="4" fill="var(--surface)"/><circle cx="33" cy="24" r="4" fill="var(--bordeaux)"/>
+      <circle cx="15" cy="33" r="4" fill="var(--surface)"/><circle cx="24" cy="33" r="4" fill="var(--gold)"/><circle cx="33" cy="33" r="4" fill="var(--surface)"/></svg>`,
+    surprises: `<svg viewBox="0 0 48 48" fill="none"><rect x="8" y="20" width="32" height="20" rx="4" fill="var(--blush-soft)"/><rect x="6" y="14" width="36" height="8" rx="3" fill="var(--gold-soft)"/><rect x="21" y="14" width="6" height="26" fill="var(--bordeaux)"/><path d="M18 14c-4 0-6-3-4-6s7-1 6 6zM30 14c4 0 6-3 4-6s-7-1-6 6z" fill="var(--bordeaux)"/></svg>`,
+  };
+
+  const priorites = [
+    { path: 'ouvrir-quand', badge: 'PRIORITÉ 1', titre: 'À ouvrir quand…', texte: 'Des mots pour chaque moment', tag: `${D.ouvrirQuand.length} messages à découvrir`, illus: 'enveloppe' },
+    { path: 'jeux',         badge: 'PRIORITÉ 2', titre: 'Nos petits jeux',  texte: 'Quiz, défis et mini-jeux à deux', tag: `${JEUX_LISTE.length} jeux`, illus: 'jeux' },
+  ];
+
+  page.querySelector('#univers-priority').innerHTML = priorites.map(p => `
+    <a class="priority-card" href="#/${p.path}" data-priority="${p.path}">
+      <span class="priority-badge">${p.badge}</span>
+      <h3>${escapeHtml(p.titre)}</h3>
+      <p>${escapeHtml(p.texte)}</p>
+      <span class="priority-tag">${escapeHtml(p.tag)}</span>
+      ${p.illus === 'enveloppe' ? `
+        <div class="envelope-icon">
+          <div class="env-back"></div>
+          <div class="env-letter">♥</div>
+          <div class="env-flap"></div>
+        </div>` : `
+        <div class="jeux-icon">
+          <span class="jeux-de">⚁</span><span class="jeux-carte">?</span><span class="jeux-roue"></span><span class="jeux-couronne">♛</span>
+        </div>`}
+    </a>`).join('');
+
+  // Animation d'ouverture d'enveloppe avant de changer de page
+  const carteEnveloppe = page.querySelector('[data-priority="ouvrir-quand"]');
+  carteEnveloppe.addEventListener('click', e => {
+    if (carteEnveloppe.classList.contains('opening')) { e.preventDefault(); return; }
+    e.preventDefault();
+    carteEnveloppe.classList.add('opening');
+    setTimeout(() => navigateTo('ouvrir-quand'), 650);
+  });
+
+  page.querySelector('#univers-secondaire').innerHTML = ROUTES
+    .filter(r => !['accueil', 'ouvrir-quand', 'jeux'].includes(r.path))
     .map(r => `
-      <a class="page-card" href="#/${r.path}">
-        <span class="page-card-icon">${r.emoji}</span>
+      <a class="mini-card" href="#/${r.path}">
+        <span class="mini-card-icon">${ICONES[r.path] || `<span style="font-size:1.6rem;">${r.emoji}</span>`}</span>
         <h3>${escapeHtml(r.label)}</h3>
         <p>${escapeHtml(r.desc || '')}</p>
       </a>`)
