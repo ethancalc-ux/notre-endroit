@@ -6,6 +6,10 @@
 <title>Notre petit endroit</title>
 <meta name="description" content="Un petit refuge en ligne, rempli de douceur.">
 <meta name="theme-color" content="#fbf5ef">
+<!-- Site privé : on demande aux moteurs de recherche de ne pas l'indexer.
+     Attention : ce n'est PAS une protection par mot de passe, juste une
+     demande polie que les moteurs de recherche respectent en général. -->
+<meta name="robots" content="noindex, nofollow">
 
 <!-- PWA : installable comme une application -->
 <link rel="manifest" href="manifest.json">
@@ -33,6 +37,13 @@
 
 <!-- Effet d'étoiles très discret, en fond -->
 <canvas id="ambient-canvas" aria-hidden="true"></canvas>
+
+<!-- Fond qui évolue doucement avec le défilement de la page -->
+<div id="scroll-bg" aria-hidden="true">
+  <div class="scroll-blob scroll-blob-1"></div>
+  <div class="scroll-blob scroll-blob-2"></div>
+  <div class="scroll-blob scroll-blob-3"></div>
+</div>
 
 <!-- ==================== EN-TÊTE ==================== -->
 <header class="site-header">
