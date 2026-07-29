@@ -83,6 +83,7 @@ const ROUTES = [
   { path: 'mot-du-jour',    label: 'Le mot du jour',          emoji: '✨', desc: 'Une pensée par jour',               render: renderMotDuJour },
   { path: 'puissance4',     label: 'Puissance 4',             emoji: '🔴', desc: 'On y joue à deux, en direct',       render: renderPuissance4 },
   { path: 'surprises',      label: 'Petites surprises',       emoji: '🎁', desc: 'Des enveloppes à ouvrir',           render: renderSurprises },
+  { path: 'jeux',           label: 'Nos petits jeux',         emoji: '🎲', desc: 'Quiz et mini-jeux pour deux',       render: renderJeuxListe },
 ];
 
 function currentRoute() {
@@ -1074,6 +1075,260 @@ function renderPuissance4() {
 }
 
 /* --- Les petites surprises (enveloppes) ----------------------------------------*/
+/* ======================================================================
+   NOS PETITS JEUX
+   ====================================================================== */
+const JEUX_LISTE = [
+  { id: 'roue',          icone: '🎡', titre: 'La roue de nos envies',       texte: 'Fais tourner, on suit ce qui sort' },
+  { id: 'trone',         icone: '👑', titre: "Le Trône d'Or",               texte: 'Pour rire, sans se prendre au sérieux' },
+  { id: 'compatibilite', icone: '💞', titre: 'Notre compatibilité du jour', texte: '100% pour rire, amour 100% vrai' },
+];
+
+function renderJeuxListe() {
+  const page = el(`<div class="page">
+    <div class="page-header"><span class="eyebrow">Pour jouer, tous les deux</span><h1>Nos petits jeux</h1></div>
+    <div class="grid" id="jeux-grid"></div>
+    <p style="text-align:center;color:var(--ink-soft);font-size:.85rem;margin-top:24px;">D'autres jeux (à deux, en direct) arrivent bientôt ✨</p>
+  </div>`);
+  page.querySelector('#jeux-grid').innerHTML = JEUX_LISTE.map(j => `
+    <a class="card envelope-card card-link" href="#/jeux/${j.id}">
+      <span class="glyph">${j.icone}</span>
+      <h3>${escapeHtml(j.titre)}</h3>
+      <p>${escapeHtml(j.texte)}</p>
+    </a>`).join('');
+  return page;
+}
+
+function renderJeuxDetail(sub) {
+  if (sub === 'roue') return renderJeuRoue();
+  if (sub === 'trone') return renderJeuTrone();
+  if (sub === 'compatibilite') return renderJeuCompatibilite();
+  return renderJeuxListe();
+}
+
+function jeuxBackLink() {
+  return `<a href="#/jeux" class="btn btn-ghost btn-sm" style="margin-bottom:24px;">← Retour aux jeux</a>`;
+}
+
+/* --- Jeu 1 : la roue de nos envies ---------------------------------------- */
+function renderJeuRoue() {
+  const activites = D.jeux.roue;
+  const page = el(`<div class="page">
+    ${jeuxBackLink()}
+    <div class="page-header"><span class="eyebrow">🎡</span><h1>La roue de nos envies</h1></div>
+    <div class="roue-wrap">
+      <div class="roue-disque" id="roue-disque"></div>
+      <div class="roue-pointeur">▼</div>
+    </div>
+    <div style="text-align:center;">
+      <button class="btn btn-primary" id="btn-tourner">Tourner la roue</button>
+    </div>
+    <div id="roue-resultat" style="max-width:420px;margin:20px auto 0;"></div>
+  </div>`);
+
+  const disque = page.querySelector('#roue-disque');
+  let tours = 0;
+  page.querySelector('#btn-tourner').addEventListener('click', () => {
+    const choix = pick(activites);
+    const reduitMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    tours++;
+    if (!reduitMotion) {
+      disque.style.transform = `rotate(${tours * 1080 + Math.floor(Math.random() * 360)}deg)`;
+    }
+    const afficher = () => {
+      page.querySelector('#roue-resultat').innerHTML = `
+        <div class="card" style="text-align:center;">
+          <div style="font-size:1.3rem;margin-bottom:10px;">${escapeHtml(choix)}</div>
+          <button class="btn btn-primary btn-sm" id="btn-on-le-fait">On le fait 🤍</button>
+        </div>`;
+      page.querySelector('#btn-on-le-fait')?.addEventListener('click', () => {
+        openModal({ glyph: '🎡', bodyHtml: `<p class="modal-text">${escapeHtml(choix)}, décidé !</p>` });
+      });
+    };
+    reduitMotion ? afficher() : setTimeout(afficher, 900);
+  });
+  return page;
+}
+
+/* --- Jeu 2 : Le Trône d'Or -------------------------------------------------
+   Réutilise les mêmes données que le petit panneau "Aujourd'hui" de
+   l'accueil (même clé de stockage), pour que les deux restent synchronisés
+   sur cet appareil. */
+function renderJeuTrone() {
+  const CACA_KEY = 'compteur-toilettes-jours';
+  const SON_KEY = 'trone-sons-actifs';
+  const todayKey = () => new Date().toISOString().slice(0, 10);
+
+  const page = el(`<div class="page">
+    ${jeuxBackLink()}
+    <div class="page-header"><span class="eyebrow">👑</span><h1>Le Trône d'Or</h1><p>Pour rire, sans se prendre au sérieux.</p></div>
+    <div class="card trone-card" style="max-width:480px;margin:0 auto;text-align:center;">
+      <div class="trone-couronne" id="trone-couronne"></div>
+      <div class="daily-panel-row" style="margin:14px 0;">
+        <button class="daily-btn" id="trone-lorvencia" type="button">Lorvencia <span class="daily-count" id="trone-lorvencia-n">0</span></button>
+        <button class="daily-btn" id="trone-ethan" type="button">Ethan <span class="daily-count" id="trone-ethan-n">0</span></button>
+      </div>
+      <div class="trone-stats" id="trone-stats"></div>
+      <div class="trone-trophees" id="trone-trophees"></div>
+      <label class="trone-son-toggle"><input type="checkbox" id="trone-son"> 🔈 Activer les petits sons</label>
+    </div>
+  </div>`);
+
+  function beep(freq = 440, duree = 0.12) {
+    if (!Store.get(SON_KEY, false)) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duree);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duree);
+    } catch {}
+  }
+
+  function confetti() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    for (let i = 0; i < 24; i++) {
+      const piece = document.createElement('span');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.background = ['var(--bordeaux)', 'var(--gold)', 'var(--blush)'][i % 3];
+      piece.style.animationDelay = (Math.random() * 0.3) + 's';
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 1800);
+    }
+  }
+
+  function getData() { return Store.get(CACA_KEY, {}); }
+
+  function bump(personne) {
+    const data = getData();
+    const jour = todayKey();
+    data[jour] = data[jour] || { lorvencia: 0, ethan: 0 };
+    const ancienRecord = Math.max(0, ...Object.values(data).map(d => d[personne] || 0).filter((_, i, arr) => true));
+    data[jour][personne]++;
+    Store.set(CACA_KEY, data);
+    beep(personne === 'lorvencia' ? 520 : 400);
+    if (data[jour][personne] > ancienRecord) confetti();
+    paint();
+  }
+
+  function paint() {
+    const data = getData();
+    const jours = Object.keys(data).sort();
+    const today = data[todayKey()] || { lorvencia: 0, ethan: 0 };
+    page.querySelector('#trone-lorvencia-n').textContent = today.lorvencia;
+    page.querySelector('#trone-ethan-n').textContent = today.ethan;
+
+    const total = { lorvencia: 0, ethan: 0 };
+    let semaine = { lorvencia: 0, ethan: 0 };
+    const septJours = new Set(Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - i); return d.toISOString().slice(0, 10);
+    }));
+    jours.forEach(j => {
+      total.lorvencia += data[j].lorvencia || 0;
+      total.ethan += data[j].ethan || 0;
+      if (septJours.has(j)) { semaine.lorvencia += data[j].lorvencia || 0; semaine.ethan += data[j].ethan || 0; }
+    });
+
+    const leader = total.lorvencia === total.ethan ? null : (total.lorvencia > total.ethan ? 'Lorvencia' : 'Ethan');
+    page.querySelector('#trone-couronne').innerHTML = leader
+      ? `<span style="font-size:2.2rem;">👑</span><div style="font-weight:700;color:var(--bordeaux);">${leader} sur le trône</div>`
+      : `<span style="font-size:2.2rem;">🤝</span><div style="font-weight:700;color:var(--bordeaux);">Égalité parfaite</div>`;
+
+    // Série : nombre de jours consécutifs (en remontant depuis aujourd'hui) où les deux ont au moins 1
+    let serie = 0;
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const j = data[key];
+      if (j && j.lorvencia > 0 && j.ethan > 0) serie++; else break;
+    }
+
+    page.querySelector('#trone-stats').innerHTML = `
+      <div class="place-meta" style="justify-content:center;">
+        <span>📅 Cette semaine : Lorvencia ${semaine.lorvencia} · Ethan ${semaine.ethan}</span>
+      </div>
+      <div class="place-meta" style="justify-content:center;">
+        <span>🏆 Total : Lorvencia ${total.lorvencia} · Ethan ${total.ethan}</span>
+      </div>
+      ${serie > 1 ? `<div class="place-meta" style="justify-content:center;"><span>🔥 Série en cours : ${serie} jours</span></div>` : ''}
+    `;
+
+    const trophees = [];
+    if (leader) trophees.push(`👑 ${leader === 'Lorvencia' ? 'Reine' : 'Roi'} du trône`);
+    if (Object.values(data).some(d => (d.lorvencia || 0) >= 2 || (d.ethan || 0) >= 2)) trophees.push('⚡ Double impact');
+    if (Object.values(data).some(d => d.lorvencia > 0 && d.lorvencia === d.ethan)) trophees.push('🤝 Synchronisation parfaite');
+    if (serie >= 3) trophees.push('🔥 La délivrance (3 jours de suite)');
+    page.querySelector('#trone-trophees').innerHTML = trophees.length
+      ? `<div class="place-meta" style="justify-content:center;flex-wrap:wrap;">${trophees.map(t => `<span class="place-category">${t}</span>`).join('')}</div>`
+      : '';
+  }
+
+  paint();
+  page.querySelector('#trone-lorvencia').addEventListener('click', () => bump('lorvencia'));
+  page.querySelector('#trone-ethan').addEventListener('click', () => bump('ethan'));
+  const sonCheckbox = page.querySelector('#trone-son');
+  sonCheckbox.checked = Store.get(SON_KEY, false);
+  sonCheckbox.addEventListener('change', () => Store.set(SON_KEY, sonCheckbox.checked));
+
+  return page;
+}
+
+/* --- Jeu 3 : Notre compatibilité du jour ------------------------------------ */
+function renderJeuCompatibilite() {
+  const questions = D.jeux.compatibilite;
+  const page = el(`<div class="page">
+    ${jeuxBackLink()}
+    <div class="page-header"><span class="eyebrow">💞</span><h1>Notre compatibilité du jour</h1></div>
+    <div id="compat-quiz" style="max-width:480px;margin:0 auto;"></div>
+  </div>`);
+
+  const reponses = [];
+  const zone = page.querySelector('#compat-quiz');
+
+  function afficherQuestion(i) {
+    if (i >= questions.length) return afficherResultat();
+    const q = questions[i];
+    zone.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <p style="font-weight:600;margin-bottom:14px;">${escapeHtml(q.question)}</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${q.options.map((o, oi) => `<button class="btn btn-ghost" data-oi="${oi}">${escapeHtml(o)}</button>`).join('')}
+        </div>
+        <p style="margin-top:14px;color:var(--ink-soft);font-size:.8rem;">Question ${i + 1}/${questions.length}</p>
+      </div>`;
+    zone.querySelectorAll('[data-oi]').forEach(btn => btn.addEventListener('click', () => {
+      reponses.push(parseInt(btn.dataset.oi, 10));
+      afficherQuestion(i + 1);
+    }));
+  }
+
+  function afficherResultat() {
+    // Résultat pseudo-aléatoire mais stable pour la journée (même résultat si on la refait le même jour)
+    const graine = todayKeySimple() + reponses.join('');
+    let hash = 0;
+    for (const c of graine) hash = (hash * 31 + c.charCodeAt(0)) >>> 0;
+    const pourcentage = 70 + (hash % 31); // entre 70 et 100, toujours positif et sympa
+    zone.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div style="font-family:var(--font-display);font-size:2.6rem;color:var(--bordeaux);font-weight:800;">${pourcentage}%</div>
+        <p>de compatibilité aujourd'hui</p>
+        <p style="font-size:.8rem;color:var(--ink-soft);margin-top:10px;">Résultat 100% pour rire, amour 100% véritable.</p>
+        <button class="btn btn-ghost btn-sm" id="btn-rejouer" style="margin-top:12px;">Recommencer</button>
+      </div>`;
+    zone.querySelector('#btn-rejouer').addEventListener('click', () => { reponses.length = 0; afficherQuestion(0); });
+  }
+  function todayKeySimple() { return new Date().toISOString().slice(0, 10); }
+
+  afficherQuestion(0);
+  return page;
+}
+
 function renderSurprises() {
   const page = el(`<div class="page">
     <div class="page-header"><span class="eyebrow">Chut, c'est une surprise</span><h1>Les petites surprises</h1></div>
@@ -1109,6 +1364,7 @@ function emptyState(icon, text) {
 /* Certaines routes ont des sous-pages (détail). On les branche ici. */
 const originalOuvrirQuand = renderOuvrirQuandListe;
 ROUTES.find(r => r.path === 'ouvrir-quand').render = (sub) => sub ? renderOuvrirQuandDetail(sub) : originalOuvrirQuand();
+ROUTES.find(r => r.path === 'jeux').render = (sub) => renderJeuxDetail(sub);
 
 /* ======================================================================
    6. EFFET D'ÉTOILES (discret, désactivable dans data.js)
