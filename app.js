@@ -522,6 +522,28 @@ function getIdentite(callback) {
 }
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
+// Interrupteur de sons partagé par tous les jeux : désactivé par défaut,
+// ne joue jamais tant que la personne n'a pas explicitement activé
+// l'interrupteur (règle demandée : les sons ne fonctionnent qu'après
+// une interaction utilisateur).
+const SONS_KEY = 'sons-actifs';
+function sonsActifs() { return Store.get(SONS_KEY, false); }
+function jouerSon(freq = 440, duree = 0.12) {
+  if (!sonsActifs()) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duree);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duree);
+  } catch {}
+}
+
 function openEnvieWidget() {
   const { telephoneContact, emailContact } = D.reglages;
   const presets = D.envies;
@@ -1128,6 +1150,9 @@ const JEUX_LISTE = [
 function renderJeuxListe() {
   const page = el(`<div class="page">
     <div class="page-header"><span class="eyebrow">Pour jouer, tous les deux</span><h1>Nos petits jeux</h1></div>
+    <div style="text-align:center;margin-bottom:20px;">
+      <label class="trone-son-toggle"><input type="checkbox" id="jeux-son"> 🔈 Activer les petits sons (pour tous les jeux)</label>
+    </div>
     <div class="grid" id="jeux-grid"></div>
     <p style="text-align:center;color:var(--ink-soft);font-size:.85rem;margin-top:24px;">D'autres jeux (à deux, en direct) arrivent bientôt ✨</p>
   </div>`);
@@ -1137,6 +1162,9 @@ function renderJeuxListe() {
       <h3>${escapeHtml(j.titre)}</h3>
       <p>${escapeHtml(j.texte)}</p>
     </a>`).join('');
+  const sonCheckbox = page.querySelector('#jeux-son');
+  sonCheckbox.checked = sonsActifs();
+  sonCheckbox.addEventListener('change', () => Store.set(SONS_KEY, sonCheckbox.checked));
   return page;
 }
 
@@ -1506,6 +1534,7 @@ function renderJeuQuiConnait() {
           </div>`;
         if (n === 5 && !root.dataset.confettiJoue) {
           root.dataset.confettiJoue = '1';
+          jouerSon(700, 0.2);
           if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
             for (let i = 0; i < 24; i++) {
               const piece = document.createElement('span');
@@ -1577,6 +1606,7 @@ function renderJeuTuPreferes() {
           </div>`;
       } else {
         const match = monChoix === sonChoix;
+        if (match && !root.dataset.sonJoue) { root.dataset.sonJoue = '1'; jouerSon(600, 0.15); }
         root.innerHTML = `
           <div class="card ${match ? 'fade-rise' : ''}">
             <div class="place-meta" style="justify-content:center;margin-bottom:10px;">
@@ -1719,7 +1749,6 @@ function renderJeuRoue() {
    sur cet appareil. */
 function renderJeuTrone() {
   const CACA_KEY = 'compteur-toilettes-jours';
-  const SON_KEY = 'trone-sons-actifs';
   const todayKey = () => new Date().toISOString().slice(0, 10);
 
   const page = el(`<div class="page">
@@ -1733,25 +1762,11 @@ function renderJeuTrone() {
       </div>
       <div class="trone-stats" id="trone-stats"></div>
       <div class="trone-trophees" id="trone-trophees"></div>
-      <label class="trone-son-toggle"><input type="checkbox" id="trone-son"> 🔈 Activer les petits sons</label>
+      <p style="font-size:.78rem;color:var(--ink-soft);margin-top:12px;">🔈 Les sons s'activent depuis la page « Nos petits jeux ».</p>
     </div>
   </div>`);
 
-  function beep(freq = 440, duree = 0.12) {
-    if (!Store.get(SON_KEY, false)) return;
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.frequency.value = freq;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duree);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + duree);
-    } catch {}
-  }
+  const beep = jouerSon;
 
   function confetti() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -1835,9 +1850,6 @@ function renderJeuTrone() {
   paint();
   page.querySelector('#trone-lorvencia').addEventListener('click', () => bump('lorvencia'));
   page.querySelector('#trone-ethan').addEventListener('click', () => bump('ethan'));
-  const sonCheckbox = page.querySelector('#trone-son');
-  sonCheckbox.checked = Store.get(SON_KEY, false);
-  sonCheckbox.addEventListener('change', () => Store.set(SON_KEY, sonCheckbox.checked));
 
   return page;
 }
