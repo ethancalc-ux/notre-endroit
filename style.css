@@ -903,3 +903,99 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
 .lequel-vote:hover { transform: translateY(-3px); background: var(--blush-soft); }
 .lequel-vote img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: var(--shadow-sm); }
 .lequel-vote span { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
+
+/* --- Bento des widgets (accueil) -------------------------------------------- */
+.univers-titre { font-size: 1.7rem; }
+.univers-priority-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3);
+  max-width: 960px; margin: 0 auto var(--space-3);
+}
+.priority-card {
+  position: relative; display: block; overflow: hidden;
+  background: color-mix(in srgb, var(--cream) 88%, transparent);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--blush); border-radius: var(--radius-lg);
+  padding: var(--space-4); min-height: 240px;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
+}
+.priority-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.priority-card h3 { font-size: 1.3rem; margin-bottom: 4px; }
+.priority-card p { color: var(--ink-soft); font-size: 0.9rem; margin-bottom: 10px; }
+.priority-badge {
+  display: inline-block; background: var(--bordeaux); color: var(--cream);
+  font-size: 0.68rem; font-weight: 700; letter-spacing: .04em;
+  padding: 4px 12px; border-radius: var(--radius-pill); margin-bottom: 10px;
+}
+.priority-tag {
+  display: inline-block; background: var(--blush-soft); color: var(--bordeaux-dark);
+  font-size: 0.78rem; font-weight: 600; padding: 4px 12px; border-radius: var(--radius-pill);
+}
+
+/* Illustration enveloppe (À ouvrir quand...) */
+.envelope-icon { position: relative; width: 110px; height: 76px; margin: 18px auto 0; perspective: 300px; }
+.env-back {
+  position: absolute; inset: 0; border-radius: 10px;
+  background: linear-gradient(160deg, var(--blush-soft), var(--cream-2));
+  border: 2px solid var(--blush);
+}
+.env-letter {
+  position: absolute; left: 12px; right: 12px; top: -4px; height: 64px;
+  background: var(--surface); border-radius: 8px; box-shadow: var(--shadow-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--bordeaux); font-size: 1.4rem; z-index: 1;
+  transform: translateY(26px); opacity: 0;
+  transition: transform 0.55s var(--ease-soft), opacity 0.55s var(--ease-soft);
+}
+.env-flap {
+  position: absolute; top: 0; left: 0; width: 100%; height: 0;
+  border-left: 55px solid transparent; border-right: 55px solid transparent;
+  border-top: 40px solid var(--bordeaux);
+  transform-origin: top center; transform: rotateX(0deg); z-index: 2;
+  transition: transform 0.55s var(--ease-soft);
+}
+.priority-card:hover .env-flap { transform: rotateX(-18deg); }
+.priority-card.opening .env-flap { transform: rotateX(180deg); }
+.priority-card.opening .env-letter { transform: translateY(-16px); opacity: 1; }
+
+/* Illustration "Nos petits jeux" */
+.jeux-icon { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 26px auto 0; font-size: 1.6rem; }
+.jeux-de, .jeux-carte, .jeux-couronne { color: var(--bordeaux); }
+.jeux-carte {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 34px; background: var(--surface); border-radius: 6px;
+  box-shadow: var(--shadow-sm); font-size: 1rem; font-weight: 700; color: var(--gold);
+}
+.jeux-roue {
+  display: inline-block; width: 26px; height: 26px; border-radius: 50%;
+  background: conic-gradient(var(--bordeaux) 0 25%, var(--blush) 25% 50%, var(--gold-soft) 50% 75%, var(--bordeaux) 75% 100%);
+  transition: transform 0.8s var(--ease-soft);
+}
+.priority-card:hover .jeux-roue { transform: rotate(120deg); }
+.jeux-couronne { color: var(--gold); }
+
+/* Grille secondaire (7 autres widgets) */
+#univers-secondaire {
+  display: flex; flex-wrap: wrap; gap: var(--space-3);
+  justify-content: center; max-width: 960px; margin: 0 auto;
+}
+.mini-card {
+  flex: 1 1 200px; max-width: 260px;
+  display: block; text-align: left;
+  background: var(--surface); border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft); box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
+  transition: transform var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
+}
+.mini-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.mini-card-icon {
+  width: 48px; height: 48px; display: grid; place-items: center;
+  margin-bottom: 8px;
+}
+.mini-card-icon svg { width: 40px; height: 40px; }
+.mini-card h3 { font-size: 1.02rem; margin-bottom: 4px; }
+.mini-card p { font-size: 0.85rem; color: var(--ink-soft); margin: 0; }
+
+@media (max-width: 700px) {
+  .univers-priority-row { grid-template-columns: 1fr; }
+}
