@@ -1176,3 +1176,43 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
   background: var(--cream); opacity: .55;
 }
 :root[data-theme="dark"] #site-bg-veil { background: #241a1e; opacity: .78; }
+
+/* --- Animations météo, selon la condition ----------------------------------- */
+.meteo-anim-soleil .meteo-rayons { animation: meteoRayons 8s linear infinite; transform-origin: 24px 24px; }
+@keyframes meteoRayons { to { transform: rotate(360deg); } }
+
+.meteo-anim-nuage-soleil, .meteo-anim-soleil-voile { animation: meteoFlotte 5s ease-in-out infinite; }
+@keyframes meteoFlotte { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
+
+.meteo-anim-nuage { animation: meteoFlotte 6s ease-in-out infinite; }
+
+.meteo-anim-pluie, .meteo-anim-bruine { animation: meteoTombe 1.4s ease-in infinite; }
+@keyframes meteoTombe { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+
+.meteo-anim-neige { animation: meteoNeige 3s ease-in-out infinite; }
+@keyframes meteoNeige { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(3px) rotate(8deg); } }
+
+.meteo-anim-nuit .meteo-etoile { animation: meteoEtoile 2.4s ease-in-out infinite; }
+.meteo-anim-nuit .meteo-etoile:nth-child(2) { animation-delay: .5s; }
+.meteo-anim-nuit .meteo-etoile:nth-child(3) { animation-delay: 1s; }
+@keyframes meteoEtoile { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+
+.meteo-anim-orage { animation: meteoOrage 2.2s ease-in-out infinite; }
+@keyframes meteoOrage { 0%, 92%, 100% { filter: brightness(1); } 95% { filter: brightness(1.4); } }
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="meteo-anim-"], [class*="meteo-anim-"] * { animation: none !important; }
+}
+
+/* --- Bitmoji qui dorment la nuit -------------------------------------------- */
+.distance-avatar-wrap { position: relative; display: inline-block; }
+.avatar-endormi, img.avatar-endormi { filter: grayscale(35%) brightness(.88); }
+.distance-avatar-wrap.avatar-endormi::after,
+.lequel-vote img.avatar-endormi + span::before {
+  content: '💤'; position: absolute; top: -8px; right: -6px; font-size: .9rem;
+  animation: zzzFloat 2.6s ease-in-out infinite;
+}
+@keyframes zzzFloat { 0%, 100% { transform: translateY(0); opacity: .7; } 50% { transform: translateY(-5px); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .distance-avatar-wrap.avatar-endormi::after { animation: none !important; }
+}
