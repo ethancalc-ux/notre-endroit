@@ -1116,6 +1116,7 @@ function renderPuissance4() {
 const JEUX_LISTE = [
   { id: 'question-du-jour', icone: '💬', titre: 'Question du jour',           texte: 'Une par jour, révélée à deux' },
   { id: 'tu-preferes',   icone: '↔️', titre: 'Tu préfères ?',               texte: 'Match parfait ou pas ?' },
+  { id: 'qui-connait',   icone: '🧠', titre: 'Qui connaît le mieux l\'autre ?', texte: '5 questions, un score sur 5' },
   { id: 'roue',          icone: '🎡', titre: 'La roue de nos envies',       texte: 'Fais tourner, on suit ce qui sort' },
   { id: 'trone',         icone: '👑', titre: "Le Trône d'Or",               texte: 'Pour rire, sans se prendre au sérieux' },
   { id: 'compatibilite', icone: '💞', titre: 'Notre compatibilité du jour', texte: '100% pour rire, amour 100% vrai' },
@@ -1139,6 +1140,7 @@ function renderJeuxListe() {
 function renderJeuxDetail(sub) {
   if (sub === 'question-du-jour') return renderJeuQuestionDuJour();
   if (sub === 'tu-preferes') return renderJeuTuPreferes();
+  if (sub === 'qui-connait') return renderJeuQuiConnait();
   if (sub === 'roue') return renderJeuRoue();
   if (sub === 'trone') return renderJeuTrone();
   if (sub === 'compatibilite') return renderJeuCompatibilite();
@@ -1147,6 +1149,125 @@ function renderJeuxDetail(sub) {
 
 function jeuxBackLink() {
   return `<a href="#/jeux" class="btn btn-ghost btn-sm" style="margin-bottom:24px;">← Retour aux jeux</a>`;
+}
+
+/* --- Jeu : Qui connaît le mieux l'autre ? (synchronisé via Firebase) ------- */
+function renderJeuQuiConnait() {
+  const page = el(`<div class="page">
+    ${jeuxBackLink()}
+    <div class="page-header"><span class="eyebrow">🧠</span><h1>Qui connaît le mieux l'autre ?</h1></div>
+    <div id="qc-root" style="max-width:480px;margin:0 auto;"></div>
+  </div>`);
+  const root = page.querySelector('#qc-root');
+  const db = firebaseDB();
+  if (!db) {
+    root.innerHTML = emptyState('🧠', "Il manque la configuration Firebase (déjà utilisée pour le Puissance 4) pour activer ce jeu, regarde le README.");
+    return page;
+  }
+
+  const jour = todayISO();
+  const banque = D.jeux.quiConnait;
+  // Tire 5 questions différentes, choisies de façon stable pour la journée
+  const graineJour = Array.from(jour).reduce((h, c) => h * 31 + c.charCodeAt(0), 0);
+  const indices = [];
+  for (let i = 0; indices.length < Math.min(5, banque.length); i++) {
+    const idx = Math.abs(graineJour + i * 17) % banque.length;
+    if (!indices.includes(idx)) indices.push(idx);
+  }
+  const questions = indices.map(i => banque[i]);
+  const ref = db.ref(`${jeuxCle()}/quiConnait/${jour}`);
+
+  root.innerHTML = `<p style="color:var(--ink-soft);text-align:center;">Connexion…</p>`;
+
+  function formulaireReponses(titre, sousTexte, onValider) {
+    root.innerHTML = `
+      <div class="card">
+        <p style="font-weight:600;margin-bottom:4px;">${titre}</p>
+        <p style="color:var(--ink-soft);font-size:.85rem;margin-bottom:14px;">${sousTexte}</p>
+        ${questions.map((q, i) => `
+          <div style="margin-bottom:12px;text-align:left;">
+            <label style="font-size:.88rem;font-weight:600;display:block;margin-bottom:4px;">${escapeHtml(q)}</label>
+            <input type="text" data-qi="${i}" style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--border-soft);font-family:var(--font-body);">
+          </div>`).join('')}
+        <button class="btn btn-primary btn-sm" id="qc-valider" style="width:100%;margin-top:8px;">Valider mes réponses</button>
+      </div>`;
+    root.querySelector('#qc-valider').addEventListener('click', () => {
+      const reponses = questions.map((_, i) => root.querySelector(`[data-qi="${i}"]`).value.trim() || '(vide)');
+      onValider(reponses);
+    });
+  }
+
+  getIdentite(moi => {
+    const autre = moi === 'ethan' ? 'lorvencia' : 'ethan';
+
+    function paint(val) {
+      val = val || {};
+      const soi = val.soi || {};
+      const devine = val.devine || {};
+      const score = val.score || {};
+
+      if (!soi[moi]) {
+        formulaireReponses('D\'abord, réponds pour toi-même', 'Sois honnête, ça sert de base au jeu.',
+          (reponses) => ref.child(`soi/${moi}`).set(reponses));
+      } else if (!devine[moi]) {
+        formulaireReponses('Maintenant, devine pour l\'autre', `Qu'est-ce que ${autre === 'ethan' ? 'Ethan' : 'Lorvencia'} répondrait ?`,
+          (reponses) => ref.child(`devine/${moi}`).set(reponses));
+      } else if (!soi[autre] || !devine[autre]) {
+        root.innerHTML = `<div class="card" style="text-align:center;"><p>Tes réponses sont enregistrées. En attente que l'autre termine aussi 🤍</p></div>`;
+      } else if (score[moi] === undefined) {
+        root.innerHTML = `
+          <div class="card">
+            <p style="font-weight:600;margin-bottom:14px;text-align:center;">Coche les fois où tu as deviné juste</p>
+            ${questions.map((q, i) => `
+              <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;text-align:left;cursor:pointer;">
+                <input type="checkbox" data-score-i="${i}" style="margin-top:4px;">
+                <span style="font-size:.88rem;">
+                  <strong>${escapeHtml(q)}</strong><br>
+                  Tu as deviné : ${escapeHtml(devine[moi][i])}<br>
+                  Sa vraie réponse : ${escapeHtml(soi[autre][i])}
+                </span>
+              </label>`).join('')}
+            <button class="btn btn-primary btn-sm" id="qc-voir-score" style="width:100%;">Voir mon score</button>
+          </div>`;
+        root.querySelector('#qc-voir-score').addEventListener('click', () => {
+          const n = root.querySelectorAll('[data-score-i]:checked').length;
+          ref.child(`score/${moi}`).set(n);
+        });
+      } else {
+        const n = score[moi];
+        const messages = {
+          0: "Il va falloir mener une petite enquête amoureuse.",
+          1: "Il va falloir mener une petite enquête amoureuse.",
+          2: "Tu la connais déjà très bien, mais elle garde quelques mystères.",
+          3: "Tu la connais déjà très bien, mais elle garde quelques mystères.",
+          4: "Presque imbattable !",
+          5: "Télépathie de couple débloquée.",
+        };
+        root.innerHTML = `
+          <div class="card" style="text-align:center;">
+            <div style="font-family:var(--font-display);font-size:2.4rem;color:var(--bordeaux);font-weight:800;">${n}/5</div>
+            <p style="margin-top:8px;">${messages[n]}</p>
+          </div>`;
+        if (n === 5 && !root.dataset.confettiJoue) {
+          root.dataset.confettiJoue = '1';
+          if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            for (let i = 0; i < 24; i++) {
+              const piece = document.createElement('span');
+              piece.className = 'confetti-piece';
+              piece.style.left = Math.random() * 100 + '%';
+              piece.style.background = ['var(--bordeaux)', 'var(--gold)', 'var(--blush)'][i % 3];
+              piece.style.animationDelay = (Math.random() * 0.3) + 's';
+              document.body.appendChild(piece);
+              setTimeout(() => piece.remove(), 1800);
+            }
+          }
+        }
+      }
+    }
+    ref.on('value', snap => paint(snap.val()));
+  });
+
+  return page;
 }
 
 /* --- Jeu : Tu préfères ? (synchronisé via Firebase) ------------------------- */
