@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Notre petit endroit</title>
+<meta name="description" content="Un petit refuge en ligne, rempli de douceur.">
+<meta name="theme-color" content="#fbf5ef">
+
+<!-- PWA : installable comme une application -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Notre endroit">
+
+<!-- Typographies : Montserrat (titres) + Inter (texte) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;0,800;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+
+<!-- Carte interactive (Notre Lille) : Leaflet + OpenStreetMap, gratuit, sans clé -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Puissance 4 en ligne : Firebase Realtime Database (gratuit, config perso à faire — voir README) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+</head>
+<body>
+
+<!-- Effet d'étoiles très discret, en fond -->
+<canvas id="ambient-canvas" aria-hidden="true"></canvas>
+
+<!-- ==================== EN-TÊTE ==================== -->
+<header class="site-header">
+  <a href="#/accueil" class="brand">Notre petit endroit <span class="brand-heart">♥</span></a>
+  <div class="header-actions">
+    <button class="icon-btn" id="search-toggle" aria-label="Rechercher" title="Rechercher">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
+    <button class="icon-btn" id="theme-toggle" aria-label="Mode clair / sombre" title="Mode clair / sombre">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+    </button>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false"><span></span></button>
+  </div>
+</header>
+
+<!-- ==================== NAVIGATION (tiroir) ==================== -->
+<div class="nav-scrim" id="nav-scrim"></div>
+<nav class="nav-drawer" id="nav-drawer" aria-label="Navigation principale">
+  <ul class="nav-list" id="nav-list"></ul>
+</nav>
+
+<!-- ==================== CONTENU (une seule page HTML, plusieurs vues) ==================== -->
+<main id="app"></main>
+
+<!-- ==================== PIED DE PAGE ==================== -->
+<footer class="site-footer">
+  Fait avec <span class="heart">♥</span> pour toi, tous les jours un peu plus.
+</footer>
+
+<!-- ==================== BOUTON FLOTTANT "JE PENSE À TOI" ==================== -->
+<button class="btn btn-primary floating-btn" id="floating-think">💭 Je pense à toi</button>
+
+<!-- ==================== MODALE GÉNÉRIQUE ==================== -->
+<div class="modal-scrim" id="modal-scrim" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-glyph" id="modal-glyph"></div>
+    <div id="modal-body"></div>
+    <button class="modal-close" id="modal-close">Fermer</button>
+  </div>
+</div>
+
+<!-- ==================== LIGHTBOX PHOTO ==================== -->
+<div class="lightbox" id="lightbox">
+  <button class="icon-btn lightbox-close" aria-label="Fermer">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- ==================== RECHERCHE GLOBALE ==================== -->
+<div class="search-overlay" id="search-overlay">
+  <div class="search-panel">
+    <input type="text" id="search-input" class="search-input" placeholder="Rechercher une page, une lettre, un lieu…" autocomplete="off">
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<!-- Le contenu éditable (data.js) est chargé avant la logique (app.js) -->
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
