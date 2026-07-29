@@ -893,3 +893,13 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
   font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
   color: var(--gold); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;
 }
+
+/* --- Jeu : Lequel de nous deux — boutons de vote avec avatar ---------------- */
+.lequel-vote {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border-soft);
+  background: var(--surface-alt); transition: transform var(--dur-fast) var(--ease-soft), background var(--dur-fast) var(--ease-soft);
+}
+.lequel-vote:hover { transform: translateY(-3px); background: var(--blush-soft); }
+.lequel-vote img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; box-shadow: var(--shadow-sm); }
+.lequel-vote span { font-size: 0.85rem; font-weight: 600; color: var(--ink); }
