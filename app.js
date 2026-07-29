@@ -116,6 +116,7 @@ function renderRoute() {
   $$('.nav-list a').forEach(a => a.classList.toggle('active', a.dataset.path === base));
   document.title = `${route.label} · ${D.reglages.titreSite}`;
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  document.documentElement.style.setProperty('--scroll-progress', '0');
   closeDrawer();
 }
 
@@ -2029,6 +2030,23 @@ function init() {
   // Thème sauvegardé (ou préférence système)
   const savedTheme = Store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
   applyTheme(savedTheme);
+
+  // Fond évolutif : calcule à quel pourcentage de la page on est, et
+  // l'expose en variable CSS pour que le fond en fasse ce qu'il veut.
+  let scrollTicking = false;
+  function updateScrollProgress() {
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+    document.documentElement.style.setProperty('--scroll-progress', progress.toFixed(3));
+    scrollTicking = false;
+  }
+  window.addEventListener('scroll', () => {
+    if (scrollTicking) return;
+    scrollTicking = true;
+    requestAnimationFrame(updateScrollProgress);
+  }, { passive: true });
+  window.addEventListener('resize', updateScrollProgress);
+  updateScrollProgress();
 
   buildNav();
 
