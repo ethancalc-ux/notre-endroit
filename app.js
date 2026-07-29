@@ -962,24 +962,27 @@ function renderPuissance4() {
     }
   }
 
-  // Rejoint la partie : prend une place libre (rouge ou jaune), ou observe
+  // Rejoint la partie (et la crée si besoin) en une seule opération, pour
+  // éviter que deux connexions simultanées ne se marchent sur les pieds.
   function joinGame() {
-    partieRef.child('joueurs').transaction(joueurs => {
-      joueurs = joueurs || { rouge: null, jaune: null };
-      if (joueurs.rouge === deviceId || joueurs.jaune === deviceId) return joueurs;
-      if (!joueurs.rouge) { joueurs.rouge = deviceId; return joueurs; }
-      if (!joueurs.jaune) { joueurs.jaune = deviceId; return joueurs; }
-      return joueurs; // déjà 2 joueurs pris : on n'y touche pas, on sera spectateur
+    partieRef.transaction(partie => {
+      partie = partie || { grille: c4EmptyGrid(), tour: 'rouge', gagnant: null, joueurs: { rouge: null, jaune: null } };
+      partie.joueurs = partie.joueurs || { rouge: null, jaune: null };
+      if (partie.joueurs.rouge === deviceId || partie.joueurs.jaune === deviceId) return partie;
+      if (!partie.joueurs.rouge) { partie.joueurs.rouge = deviceId; return partie; }
+      if (!partie.joueurs.jaune) { partie.joueurs.jaune = deviceId; return partie; }
+      return partie; // déjà 2 joueurs pris : on n'y touche pas, on sera spectateur
     }, (err, committed, snap) => {
-      const joueurs = snap ? snap.val() : null;
+      const partie = snap ? snap.val() : null;
+      const joueurs = partie?.joueurs;
       if (joueurs?.rouge === deviceId) monRole = 'rouge';
       else if (joueurs?.jaune === deviceId) monRole = 'jaune';
       else monRole = null;
+      // Reforce un affichage à jour : le tout premier passage de .on('value')
+      // peut arriver avant que monRole ne soit connu.
+      if (partie) paint(partie);
     });
   }
-
-  // Crée la partie si elle n'existe pas encore
-  partieRef.transaction(partie => partie || { grille: c4EmptyGrid(), tour: 'rouge', gagnant: null, joueurs: { rouge: null, jaune: null } });
   joinGame();
 
   partieRef.on('value', snap => paint(snap.val()));
