@@ -1119,6 +1119,7 @@ const JEUX_LISTE = [
   { id: 'qui-connait',   icone: '🧠', titre: 'Qui connaît le mieux l\'autre ?', texte: '5 questions, un score sur 5' },
   { id: 'devine-reponse', icone: '🔮', titre: 'Devine ma réponse',           texte: 'Un secret, une devinette' },
   { id: 'bataille',      icone: '💌', titre: 'Bataille de compliments',     texte: 'Doux mots, révélés ensemble' },
+  { id: 'lequel',        icone: '👥', titre: 'Lequel de nous deux ?',       texte: 'Un vote chacun, pour rire' },
   { id: 'roue',          icone: '🎡', titre: 'La roue de nos envies',       texte: 'Fais tourner, on suit ce qui sort' },
   { id: 'trone',         icone: '👑', titre: "Le Trône d'Or",               texte: 'Pour rire, sans se prendre au sérieux' },
   { id: 'compatibilite', icone: '💞', titre: 'Notre compatibilité du jour', texte: '100% pour rire, amour 100% vrai' },
@@ -1145,6 +1146,7 @@ function renderJeuxDetail(sub) {
   if (sub === 'qui-connait') return renderJeuQuiConnait();
   if (sub === 'devine-reponse') return renderJeuDevineReponse();
   if (sub === 'bataille') return renderJeuBataille();
+  if (sub === 'lequel') return renderJeuLequel();
   if (sub === 'roue') return renderJeuRoue();
   if (sub === 'trone') return renderJeuTrone();
   if (sub === 'compatibilite') return renderJeuCompatibilite();
@@ -1153,6 +1155,69 @@ function renderJeuxDetail(sub) {
 
 function jeuxBackLink() {
   return `<a href="#/jeux" class="btn btn-ghost btn-sm" style="margin-bottom:24px;">← Retour aux jeux</a>`;
+}
+
+/* --- Jeu : Lequel de nous deux ? (synchronisé via Firebase) ----------------- */
+function renderJeuLequel() {
+  const page = el(`<div class="page">
+    ${jeuxBackLink()}
+    <div class="page-header"><span class="eyebrow">👥</span><h1>Lequel de nous deux ?</h1></div>
+    <div id="ld-root" style="max-width:480px;margin:0 auto;text-align:center;"></div>
+  </div>`);
+  const root = page.querySelector('#ld-root');
+  const db = firebaseDB();
+  if (!db) {
+    root.innerHTML = emptyState('👥', "Il manque la configuration Firebase (déjà utilisée pour le Puissance 4) pour activer ce jeu, regarde le README.");
+    return page;
+  }
+
+  const jour = todayISO();
+  const banque = D.jeux.lequelDeNousDeux;
+  const graineJour = Array.from(jour).reduce((h, c) => h * 31 + c.charCodeAt(0), 0);
+  const affirmation = banque[Math.abs(graineJour) % banque.length];
+  const ref = db.ref(`${jeuxCle()}/lequel/${jour}`);
+  const dist = D.distanceCouple;
+
+  root.innerHTML = `<p style="color:var(--ink-soft);">Connexion…</p>`;
+
+  getIdentite(moi => {
+    function paint(val) {
+      val = val || {};
+      const votes = val.votes || {};
+      const monVote = votes[moi];
+
+      if (!monVote) {
+        root.innerHTML = `
+          <div class="card">
+            <p style="font-weight:600;margin-bottom:18px;">${escapeHtml(affirmation)}</p>
+            <div style="display:flex;gap:16px;justify-content:center;">
+              <button class="lequel-vote" data-vote="ethan"><img src="${dist.avatarA}" alt=""><span>Ethan</span></button>
+              <button class="lequel-vote" data-vote="lorvencia"><img src="${dist.avatarB}" alt=""><span>Lorvencia</span></button>
+            </div>
+          </div>`;
+        root.querySelectorAll('[data-vote]').forEach(btn => btn.addEventListener('click', () => {
+          ref.child(`votes/${moi}`).set(btn.dataset.vote);
+        }));
+      } else if (!votes.ethan || !votes.lorvencia) {
+        root.innerHTML = `<div class="card"><p>Ton vote est enregistré. En attente de l'autre 🤍</p></div>`;
+      } else {
+        const accord = votes.ethan === votes.lorvencia;
+        root.innerHTML = `
+          <div class="card fade-rise">
+            <p style="font-weight:600;margin-bottom:14px;">${escapeHtml(affirmation)}</p>
+            <div class="place-meta" style="justify-content:center;">
+              <span>Toi : ${votes[moi] === 'ethan' ? 'Ethan' : 'Lorvencia'}</span>
+            </div>
+            <div style="font-family:var(--font-display);font-size:1.2rem;color:var(--bordeaux);font-weight:700;margin-top:12px;">
+              ${accord ? '😄 Vous êtes d\'accord !' : '🤭 Avis partagés, et c\'est très bien comme ça'}
+            </div>
+          </div>`;
+      }
+    }
+    ref.on('value', snap => paint(snap.val()));
+  });
+
+  return page;
 }
 
 /* --- Jeu : Bataille de compliments (synchronisé via Firebase) --------------- */
