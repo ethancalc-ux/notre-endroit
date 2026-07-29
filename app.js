@@ -236,20 +236,16 @@ async function loadWeather(container) {
 
 /* --- Compteur ----------------------------------------------------------- */
 let counterTimer = null;
-function mountCounter(container, compteurId) {
+function mountCounter(container) {
   clearInterval(counterTimer);
-  const conf = D.compteurs.find(c => c.id === compteurId) || D.compteurs[0];
-  const target = new Date(conf.date).getTime();
+  const reference = new Date(D.derniereRencontre).getTime();
 
   function tick() {
-    const diff = target - Date.now();
-    const abs = Math.abs(diff);
-    const j = Math.floor(abs / 86400000);
-    const h = Math.floor((abs % 86400000) / 3600000);
-    const m = Math.floor((abs % 3600000) / 60000);
-    const s = Math.floor((abs % 60000) / 1000);
-    container.querySelector('.counter-caption').textContent =
-      (diff >= 0 ? conf.label : `depuis : ${conf.label.replace(/^avant\s*/i, '')}`);
+    const diff = Math.max(0, Date.now() - reference); // jamais négatif
+    const j = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
     container.querySelector('.counter').innerHTML = `
       <div class="counter-unit"><div class="num">${j}</div><div class="label">jours</div></div>
       <div class="counter-unit"><div class="num">${h}</div><div class="label">heures</div></div>
@@ -342,13 +338,16 @@ function renderAccueil() {
       <button class="btn btn-primary btn-hug" id="btn-hug">J'ai besoin d'un câlin 🤍</button>
     </div>
 
-    <div class="section" style="max-width:520px;margin:0 auto;">
-      <div class="counter-select" id="counter-select"></div>
-      <div class="counter" aria-live="polite"></div>
-      <p class="counter-caption" style="text-align:center;color:var(--ink-soft);font-size:.85rem;"></p>
+    <div class="section duo-cards" style="margin-bottom:var(--space-7);">
+      <div class="card duo-card">
+        <div class="duo-card-title">💗 Depuis notre dernier câlin</div>
+        <div class="duo-card-sub" id="derniere-rencontre-label"></div>
+        <div class="counter" aria-live="polite"></div>
+      </div>
+      <div class="card duo-card" id="distance-widget"></div>
     </div>
 
-    <div class="section">
+    <div class="section" style="margin-top:var(--space-6);">
       <div class="widget-grid" id="widget-grid"></div>
     </div>
 
@@ -385,18 +384,31 @@ function renderAccueil() {
     openModal({ glyph: '🤍', bodyHtml: `<p class="modal-text">${escapeHtml(pick(D.phrasesCalin))}</p>` });
   });
 
-  // Sélecteur de compteur
-  const select = page.querySelector('#counter-select');
-  select.innerHTML = D.compteurs.map((c, i) =>
-    `<button class="chip ${i === 0 ? 'active' : ''}" data-id="${c.id}">${escapeHtml(c.label)}</button>`
-  ).join('');
-  select.addEventListener('click', e => {
-    const btn = e.target.closest('.chip'); if (!btn) return;
-    $$('.chip', select).forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    mountCounter(page, btn.dataset.id);
-  });
-  mountCounter(page, D.compteurs[0]?.id);
+  // Compteur "depuis notre dernier câlin"
+  page.querySelector('#derniere-rencontre-label').textContent =
+    `Depuis le ${new Date(D.derniereRencontre).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  mountCounter(page.querySelector('.duo-card'));
+
+  // Widget distance
+  const dist = D.distanceCouple;
+  page.querySelector('#distance-widget').innerHTML = `
+    <div class="duo-card-title">La distance entre nous 🤍</div>
+    <div class="distance-row">
+      <div class="distance-point">
+        <img src="${dist.avatarA}" alt="" class="distance-avatar">
+        <span>${escapeHtml(dist.villeA)}</span>
+      </div>
+      <div class="distance-line">
+        <span class="distance-heart">♥</span>
+      </div>
+      <div class="distance-point">
+        <img src="${dist.avatarB}" alt="" class="distance-avatar">
+        <span>${escapeHtml(dist.villeB)}</span>
+      </div>
+    </div>
+    <div class="distance-km">≈ ${dist.km} km</div>
+    <p class="distance-note">Quelques kilomètres, mais toujours tout près dans mon cœur.</p>
+  `;
 
   // Météo
   loadWeather(page.querySelector('#weather-box'));
