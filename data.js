@@ -106,7 +106,7 @@ const SITE_DATA = {
 
      Noms possibles : envie, meteo, toilettes
      ==================================================================== */
-  widgetsAmusants: ["envie", "meteo", "toilettes"],
+  widgetsAmusants: ["envie", "meteo"],
 
   /* ====================================================================
      UNE ENVIE — petit bouton présent sur l'accueil : elle choisit une
