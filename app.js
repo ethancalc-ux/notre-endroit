@@ -365,11 +365,12 @@ function renderAccueil() {
       <button class="btn btn-primary btn-hug" id="btn-hug">J'ai besoin d'un câlin 🤍</button>
     </div>
 
-    <div class="section duo-cards" style="margin-bottom:var(--space-7);">
-      <div class="card duo-card">
+    <div class="section duo-cards" style="margin-bottom:var(--space-7);" id="scene-calin-distance">
+      <div class="card duo-card" id="scene-calin">
         <div class="duo-card-title">💗 Depuis notre dernier câlin</div>
         <div class="duo-card-sub" id="derniere-rencontre-label"></div>
         <div class="counter" aria-live="polite"></div>
+        <span class="calin-heart-textile">♥</span>
       </div>
       <div class="card duo-card" id="distance-widget"></div>
     </div>
@@ -411,21 +412,21 @@ function renderAccueil() {
   // Compteur "depuis notre dernier câlin"
   page.querySelector('#derniere-rencontre-label').textContent =
     `Depuis le ${new Date(D.derniereRencontre).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-  mountCounter(page.querySelector('.duo-card'));
+  mountCounter(page.querySelector('#scene-calin'));
 
   // Widget distance
   const dist = D.distanceCouple;
   page.querySelector('#distance-widget').innerHTML = `
     <div class="duo-card-title">La distance entre nous 🤍</div>
     <div class="distance-row">
-      <div class="distance-point">
+      <div class="distance-point distance-point-left">
         <img src="${dist.avatarA}" alt="" class="distance-avatar">
         <span>${escapeHtml(dist.villeA)}</span>
       </div>
       <div class="distance-line">
         <span class="distance-heart">♥</span>
       </div>
-      <div class="distance-point">
+      <div class="distance-point distance-point-right">
         <img src="${dist.avatarB}" alt="" class="distance-avatar">
         <span>${escapeHtml(dist.villeB)}</span>
       </div>
@@ -511,7 +512,77 @@ function renderAccueil() {
   uberCard.addEventListener('click', envoyerUberEats);
   uberCard.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); envoyerUberEats(); } });
 
+  // Mise en scène au scroll (prototype : intro, câlin, distance) — voir
+  // initScrollScenes() plus bas pour le détail. Ne fait rien si GSAP n'a
+  // pas pu se charger, ou si la personne préfère moins de mouvement.
+  page._cleanup = initScrollScenes(page);
+
   return page;
+}
+
+/* ======================================================================
+   MISE EN SCÈNE AU SCROLL (GSAP + ScrollTrigger)
+   ======================================================================
+   Prototype demandé sur 3 scènes : l'intro/carrousel, "Depuis notre
+   dernier câlin", et "La distance entre nous". Désactivé automatiquement
+   si la personne préfère moins de mouvement, ou si GSAP n'a pas pu se
+   charger (pas de connexion, bloqueur de script, etc.) — dans ce cas,
+   tout reste simplement visible normalement, rien ne casse.
+   ====================================================================== */
+function initScrollScenes(page) {
+  if (!window.gsap || !window.ScrollTrigger) return () => {};
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return () => {};
+  gsap.registerPlugin(ScrollTrigger);
+  const triggers = [];
+
+  // --- Scène 1 : intro + carrousel (au chargement, pas au scroll) --------
+  const introTl = gsap.timeline();
+  const eyebrow = page.querySelector('.page-header.eyebrow, .home-hero .eyebrow');
+  introTl
+    .from(page.querySelectorAll('.home-hero .eyebrow, .home-hero h1, .home-hero .subtitle'), {
+      opacity: 0, y: 16, duration: 0.7, stagger: 0.12, ease: 'power2.out',
+    })
+    .from(page.querySelectorAll('.carousel-slide'), {
+      opacity: 0, y: 24, scale: 0.94, duration: 0.7, stagger: 0.08, ease: 'power2.out',
+    }, '-=0.3')
+    .from(page.querySelector('.hug-wrap'), { opacity: 0, y: 12, duration: 0.5, ease: 'power2.out' }, '-=0.2');
+
+  // --- Scène 2 : "Depuis notre dernier câlin" (au scroll) ------------------
+  const calinCard = page.querySelector('#scene-calin');
+  if (calinCard) {
+    triggers.push(ScrollTrigger.create({
+      trigger: calinCard, start: 'top 82%', once: true,
+      onEnter: () => {
+        gsap.timeline()
+          .from(calinCard.querySelector('.duo-card-title'), { opacity: 0, y: 10, duration: 0.5, ease: 'power2.out' })
+          .from(calinCard.querySelector('.duo-card-sub'), { opacity: 0, y: 8, duration: 0.4, ease: 'power2.out' }, '-=0.25')
+          .from(calinCard.querySelector('.counter'), { opacity: 0, y: 16, scale: 0.92, duration: 0.6, ease: 'back.out(1.4)' }, '-=0.2')
+          .from(calinCard.querySelector('.calin-heart-textile'), { opacity: 0, scale: 0.5, duration: 0.6, ease: 'back.out(1.6)' }, '-=0.3');
+      },
+    }));
+  }
+
+  // --- Scène 3 : "La distance entre nous" (au scroll) ----------------------
+  const distanceCard = page.querySelector('#distance-widget');
+  if (distanceCard) {
+    triggers.push(ScrollTrigger.create({
+      trigger: distanceCard, start: 'top 82%', once: true,
+      onEnter: () => {
+        const ligne = distanceCard.querySelector('.distance-line');
+        if (ligne) gsap.set(ligne, { transformOrigin: 'left center' });
+        gsap.timeline()
+          .from(distanceCard.querySelector('.duo-card-title'), { opacity: 0, y: 10, duration: 0.5, ease: 'power2.out' })
+          .from(distanceCard.querySelector('.distance-point-left'), { opacity: 0, x: -30, duration: 0.6, ease: 'power2.out' }, '-=0.15')
+          .from(distanceCard.querySelector('.distance-point-right'), { opacity: 0, x: 30, duration: 0.6, ease: 'power2.out' }, '<')
+          .from(ligne, { scaleX: 0, duration: 0.7, ease: 'power2.inOut' }, '-=0.25')
+          .from(distanceCard.querySelector('.distance-km'), { opacity: 0, y: 8, duration: 0.5, ease: 'power2.out' }, '-=0.15')
+          .from(distanceCard.querySelector('.distance-note'), { opacity: 0, duration: 0.5, ease: 'power2.out' }, '-=0.2');
+      },
+    }));
+  }
+
+  // Fonction de nettoyage : appelée automatiquement en quittant la page
+  return () => { triggers.forEach(t => t.kill()); introTl.kill(); };
 }
 
 /* --- "Une envie" : message rapide envoyé par WhatsApp / SMS / email ------
