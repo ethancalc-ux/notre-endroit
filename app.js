@@ -209,7 +209,8 @@ const WEATHER_CODES = {
   75: ['neige', 'forte neige'], 80: ['bruine', 'averses'], 95: ['orage', 'orage'],
 };
 const METEO_SVG = {
-  soleil: `<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="10" fill="var(--gold)"/><g stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round"><path d="M24 4v6M24 38v6M4 24h6M38 24h6M9 9l4 4M35 35l4 4M9 39l4-4M35 13l4-4"/></g></svg>`,
+  nuit: `<svg viewBox="0 0 48 48" fill="none"><path d="M30 8a16 16 0 1010 28 13 13 0 01-10-28z" fill="var(--gold-soft)"/><g class="meteo-etoile" fill="var(--gold)"><circle cx="12" cy="12" r="1.6"/><circle cx="8" cy="22" r="1.1"/><circle cx="16" cy="30" r="1.3"/></g></svg>`,
+  soleil: `<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="10" fill="var(--gold)"/><g class="meteo-rayons" stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round"><path d="M24 4v6M24 38v6M4 24h6M38 24h6M9 9l4 4M35 35l4 4M9 39l4-4M35 13l4-4"/></g></svg>`,
   'soleil-voile': `<svg viewBox="0 0 48 48" fill="none"><circle cx="20" cy="20" r="9" fill="var(--gold)"/><path d="M10 34a9 9 0 019-9h12a7 7 0 010 14H14a4 4 0 01-4-5z" fill="var(--surface)" stroke="var(--blush)" stroke-width="1.5"/></svg>`,
   'nuage-soleil': `<svg viewBox="0 0 48 48" fill="none"><circle cx="16" cy="16" r="7" fill="var(--gold)"/><path d="M10 36a10 10 0 0110-10h14a8 8 0 010 16H15a5 5 0 01-5-6z" fill="var(--surface)" stroke="var(--blush)" stroke-width="1.5"/></svg>`,
   nuage: `<svg viewBox="0 0 48 48" fill="none"><path d="M8 34a10 10 0 0110-10h16a9 9 0 010 18H13a5 5 0 01-5-8z" fill="var(--surface)" stroke="var(--blush)" stroke-width="1.5"/></svg>`,
@@ -232,19 +233,29 @@ async function fetchWeatherFor(ville) {
   }
 }
 
+function estNuit() {
+  const h = new Date().getHours();
+  return h < 7 || h >= 21;
+}
+
 async function loadWeather(container) {
   const villes = D.reglages.meteoVilles || [];
   if (!villes.length) { container.innerHTML = `<div style="color:var(--ink-soft);font-size:.9rem;">Aucune ville configurée.</div>`; return; }
   const resultats = await Promise.all(villes.map(fetchWeatherFor));
-  container.innerHTML = resultats.map(r => r.ok ? `
+  const nuit = estNuit();
+  container.innerHTML = resultats.map(r => {
+    if (!r.ok) return `<div style="color:var(--ink-soft);font-size:.85rem;">Météo indisponible pour ${r.nom}.</div>`;
+    // La nuit, on affiche lune + étoiles plutôt que soleil, sauf s'il pleut/neige/orage
+    const type = (nuit && ['soleil', 'soleil-voile', 'nuage-soleil'].includes(r.icon)) ? 'nuit' : r.icon;
+    return `
     <div class="weather-row">
-      <div class="weather-icon">${METEO_SVG[r.icon] || METEO_SVG.nuage}</div>
+      <div class="weather-icon meteo-anim-${type}">${METEO_SVG[type] || METEO_SVG.nuage}</div>
       <div>
         <div class="weather-temp">${r.temp}°C</div>
-        <div style="color:var(--ink-soft);font-size:.85rem;">${r.desc} à ${r.nom}</div>
+        <div style="color:var(--ink-soft);font-size:.85rem;">${nuit && type === 'nuit' ? 'nuit calme' : r.desc} à ${r.nom}</div>
       </div>
-    </div>` : `<div style="color:var(--ink-soft);font-size:.85rem;">Météo indisponible pour ${r.nom}.</div>`
-  ).join('');
+    </div>`;
+  }).join('');
 }
 
 /* --- Compteur ----------------------------------------------------------- */
@@ -384,11 +395,11 @@ function renderAccueil() {
       <span>Envie d'un Uber Eats à deux ?</span>
     </div>
 
-    <div class="section speech-quote" style="max-width:520px;margin:var(--space-6) auto 0;">
+    <div class="section speech-quote organic-card tilt-1" style="max-width:520px;margin:var(--space-6) auto 0;">
       <p id="quote-of-day"></p>
     </div>
 
-    <div class="section card weather-organic" style="max-width:520px;margin:var(--space-4) auto 0;" id="weather-box">
+    <div class="section card weather-organic organic-card tilt-2" style="max-width:520px;margin:var(--space-4) auto 0;text-align:left;" id="weather-box">
       <div style="color:var(--ink-soft);">Chargement de la météo…</div>
     </div>
     <p class="weather-note" style="max-width:520px;margin:0 auto;">Peu importe la météo dehors, j'espère qu'il fera toujours un peu plus beau dans ton cœur.</p>
@@ -416,23 +427,24 @@ function renderAccueil() {
 
   // Widget distance
   const dist = D.distanceCouple;
+  const dodo = estNuit() ? ' avatar-endormi' : '';
   page.querySelector('#distance-widget').innerHTML = `
     <div class="duo-card-title">La distance entre nous 🤍</div>
     <div class="distance-row">
       <div class="distance-point distance-point-left">
-        <img src="${dist.avatarA}" alt="" class="distance-avatar">
+        <span class="distance-avatar-wrap${dodo}"><img src="${dist.avatarA}" alt="" class="distance-avatar"></span>
         <span>${escapeHtml(dist.villeA)}</span>
       </div>
       <div class="distance-line">
         <span class="distance-heart">♥</span>
       </div>
       <div class="distance-point distance-point-right">
-        <img src="${dist.avatarB}" alt="" class="distance-avatar">
+        <span class="distance-avatar-wrap${dodo}"><img src="${dist.avatarB}" alt="" class="distance-avatar"></span>
         <span>${escapeHtml(dist.villeB)}</span>
       </div>
     </div>
     <div class="distance-km">≈ ${dist.km} km</div>
-    <p class="distance-note">Quelques kilomètres, mais toujours tout près dans mon cœur.</p>
+    <p class="distance-note">${estNuit() ? 'Il est tard, on dort chacun de notre côté, mais toujours tout près dans mon cœur.' : 'Quelques kilomètres, mais toujours tout près dans mon cœur.'}</p>
   `;
 
   // Météo
@@ -1336,8 +1348,8 @@ function renderJeuLequel() {
           <div class="card">
             <p style="font-weight:600;margin-bottom:18px;">${escapeHtml(affirmation)}</p>
             <div style="display:flex;gap:16px;justify-content:center;">
-              <button class="lequel-vote" data-vote="ethan"><img src="${dist.avatarA}" alt=""><span>Ethan</span></button>
-              <button class="lequel-vote" data-vote="lorvencia"><img src="${dist.avatarB}" alt=""><span>Lorvencia</span></button>
+              <button class="lequel-vote" data-vote="ethan"><img src="${dist.avatarA}" alt="" class="${estNuit() ? 'avatar-endormi' : ''}"><span>Ethan</span></button>
+              <button class="lequel-vote" data-vote="lorvencia"><img src="${dist.avatarB}" alt="" class="${estNuit() ? 'avatar-endormi' : ''}"><span>Lorvencia</span></button>
             </div>
           </div>`;
         root.querySelectorAll('[data-vote]').forEach(btn => btn.addEventListener('click', () => {
