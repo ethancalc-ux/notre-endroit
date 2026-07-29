@@ -352,6 +352,15 @@ function renderAccueil() {
       <div class="widget-grid" id="widget-grid"></div>
     </div>
 
+    <div class="section card daily-panel" style="max-width:420px;margin:0 auto;">
+      <div class="daily-panel-title">🚽 Aujourd'hui</div>
+      <div class="daily-panel-row">
+        <button class="daily-btn" id="caca-lorvencia" type="button">Lorvencia <span class="daily-count" id="caca-lorvencia-n">0</span></button>
+        <button class="daily-btn" id="caca-ethan" type="button">Ethan <span class="daily-count" id="caca-ethan-n">0</span></button>
+      </div>
+      <button class="btn btn-primary btn-sm" id="btn-uber-quick" style="width:100%;margin-top:12px;">🍔 Demander un Uber Eats</button>
+    </div>
+
     <div class="section quote-block" style="max-width:520px;margin:0 auto;">
       <p id="quote-of-day"></p>
     </div>
@@ -424,6 +433,37 @@ function renderAccueil() {
         <p>${escapeHtml(r.desc || '')}</p>
       </a>`)
     .join('');
+
+  // Petit panneau du jour, toujours visible (pas besoin de cliquer) —
+  // le compteur ne se réinitialise jamais : chaque jour garde son propre
+  // total, l'historique complet reste dans le navigateur.
+  const CACA_KEY = 'compteur-toilettes-jours';
+  const todayKey = () => new Date().toISOString().slice(0, 10);
+  function bumpCaca(personne) {
+    const data = Store.get(CACA_KEY, {});
+    const jour = todayKey();
+    data[jour] = data[jour] || { lorvencia: 0, ethan: 0 };
+    data[jour][personne]++;
+    Store.set(CACA_KEY, data);
+    paintCaca();
+  }
+  function paintCaca() {
+    const data = Store.get(CACA_KEY, {});
+    const today = data[todayKey()] || { lorvencia: 0, ethan: 0 };
+    page.querySelector('#caca-lorvencia-n').textContent = today.lorvencia;
+    page.querySelector('#caca-ethan-n').textContent = today.ethan;
+  }
+  paintCaca();
+  page.querySelector('#caca-lorvencia').addEventListener('click', () => bumpCaca('lorvencia'));
+  page.querySelector('#caca-ethan').addEventListener('click', () => bumpCaca('ethan'));
+
+  // Bouton rapide Uber Eats — envoie directement le message par WhatsApp,
+  // sans passer par la fenêtre "Une envie".
+  page.querySelector('#btn-uber-quick').addEventListener('click', () => {
+    const preset = (D.envies || []).find(e => /uber\s*eats/i.test(e.label)) || { message: "J'ai envie d'un Uber Eats ce soir 🍔" };
+    const numero = (D.reglages.telephoneContact || '').replace(/[^\d+]/g, '');
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(preset.message)}`, '_blank');
+  });
 
   return page;
 }
