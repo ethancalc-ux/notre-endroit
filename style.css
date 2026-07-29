@@ -1,1188 +1,817 @@
 /* ======================================================================
-   NOTRE PETIT ENDROIT, app.js
+   NOTRE PETIT ENDROIT — style.css
    ======================================================================
-   Ce fichier fait tourner le site : navigation entre pages, animations,
-   lecture des données de data.js. Tu ne devrais jamais avoir besoin d'y
-   toucher pour ajouter du contenu, vois plutôt js/data.js pour ça.
+   Fichier de style unique. Organisé en grandes sections faciles à
+   retrouver (cherche les titres en MAJUSCULES avec Ctrl+F) :
 
-   Structure de ce fichier :
-   1. Utilitaires
-   2. Stockage local (favoris, cases cochées, films vus…)
-   3. Navigation / routeur (une seule page HTML, plusieurs "vues")
-   4. Composants transverses (modale, lightbox, recherche, météo…)
-   5. Rendu de chaque page
-   6. Démarrage du site
+   1. TOKENS (couleurs, typographies, espacements) — c'est ICI que tu
+      changes la palette si tu veux, sans toucher au reste du fichier.
+   2. RESET & BASE
+   3. LAYOUT (header, navigation, structure des pages)
+   4. COMPOSANTS (boutons, cartes, modales, formulaire de recherche…)
+   5. PAGES SPÉCIFIQUES (petits réglages propres à une page)
+   6. ANIMATIONS
+   7. RESPONSIVE / iPHONE
+   8. MODE SOMBRE
+   9. ACCESSIBILITÉ
+
+   Tu n'as normalement jamais besoin de modifier ce fichier pour ajouter
+   du contenu (ça, ça se passe dans js/data.js). Ce fichier ne sert qu'à
+   l'apparence.
    ====================================================================== */
 
-const D = window.SITE_DATA; // raccourci vers le contenu éditable
 
 /* ======================================================================
-   1. UTILITAIRES
+   1. TOKENS — change les couleurs ici, tout le site suivra.
    ====================================================================== */
-const $  = (sel, ctx = document) => ctx.querySelector(sel);
-const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+:root {
+  /* --- Palette "jour" ---------------------------------------------- */
+  --cream:        #fbf5ef;   /* blanc cassé — fond principal */
+  --cream-2:      #f4e9dd;   /* crème — fond des sections alternées */
+  --blush:        #f1d6d2;   /* rose poudré — accents doux */
+  --blush-soft:   #f8e7e3;   /* rose très clair — hover, halos */
+  --bordeaux:     #6e2434;   /* bordeaux — titres, boutons principaux */
+  --bordeaux-dark:#4a1622;   /* bordeaux profond — texte fort, hover */
+  --gold:         #c7a567;   /* doré — petites touches, étoiles, liens */
+  --gold-soft:    #e7d6b0;
+  --ink:          #3a2830;   /* texte principal */
+  --ink-soft:     #7a6a70;   /* texte secondaire / discret */
+  --white:        #ffffff;
 
-function el(html) {
-  const t = document.createElement('template');
-  t.innerHTML = html.trim();
-  return t.content.firstElementChild;
+  /* --- Surfaces & ombres --------------------------------------------*/
+  --surface:        var(--white);
+  --surface-alt:    var(--cream-2);
+  --border-soft:    rgba(110, 36, 52, 0.10);
+  --shadow-sm:  0 2px 10px rgba(110, 36, 52, 0.06);
+  --shadow-md:  0 10px 30px rgba(110, 36, 52, 0.08);
+  --shadow-lg:  0 20px 50px rgba(110, 36, 52, 0.14);
+
+  /* --- Typographies ---------------------------------------------- */
+  /* Display : Montserrat, une sans-serif nette et chaleureuse (titres) */
+  /* Corps   : Inter, très propre et lisible (type "Apple")             */
+  --font-display: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* --- Rayons & espacements ---------------------------------------- */
+  --radius-sm: 14px;
+  --radius-md: 22px;
+  --radius-lg: 32px;
+  --radius-pill: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 40px;
+  --space-6: 64px;
+  --space-7: 96px;
+
+  /* --- Transitions --------------------------------------------------*/
+  --ease-soft: cubic-bezier(.22, 1, .36, 1);
+  --dur-fast: 180ms;
+  --dur-med:  420ms;
+  --dur-slow: 700ms;
+
+  --header-h: 76px;
 }
 
-function escapeHtml(str = '') {
-  return String(str)
-    .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+/* --- Palette "nuit" (mode sombre) ----------------------------------- */
+:root[data-theme="dark"] {
+  --cream:        #241a1e;
+  --cream-2:      #2c1f24;
+  --blush:        #4a2f36;
+  --blush-soft:   #34252a;
+  --bordeaux:     #e8b7bf;
+  --bordeaux-dark:#f3e7e1;
+  --gold:         #d9bd85;
+  --gold-soft:    #4a3d29;
+  --ink:          #f3e7e1;
+  --ink-soft:     #c7b3ae;
+  --white:        #2c1f24;
+
+  --surface:        #2c1f24;
+  --surface-alt:    #34252a;
+  --border-soft:    rgba(243, 231, 225, 0.10);
+  --shadow-sm:  0 2px 10px rgba(0,0,0,0.25);
+  --shadow-md:  0 10px 30px rgba(0,0,0,0.32);
+  --shadow-lg:  0 20px 50px rgba(0,0,0,0.40);
 }
 
-function formatDateLong(iso) {
-  try {
-    return new Date(iso + (iso.length <= 10 ? 'T00:00:00' : '')).toLocaleDateString('fr-FR', {
-      day: 'numeric', month: 'long', year: 'numeric',
-    });
-  } catch { return iso; }
-}
-
-function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
-
-/* Renvoie une valeur "stable" pour la journée en cours (0 à max-1),
-   pour que la citation du jour soit la même toute la journée. */
-function indexOfDay(max) {
-  const start = new Date(2026, 0, 1).getTime();
-  const days = Math.floor((Date.now() - start) / 86400000);
-  return ((days % max) + max) % max;
-}
 
 /* ======================================================================
-   2. STOCKAGE LOCAL, mémorise favoris / cases cochées / films vus
-   directement dans le navigateur, sans backend. Propre à chaque appareil.
+   2. RESET & BASE
    ====================================================================== */
-const Store = {
-  get(key, fallback) {
-    try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
-    catch { return fallback; }
-  },
-  set(key, value) { localStorage.setItem(key, JSON.stringify(value)); },
-  toggleInSet(key, id) {
-    const set = new Set(Store.get(key, []));
-    set.has(id) ? set.delete(id) : set.add(id);
-    Store.set(key, Array.from(set));
-    return set.has(id);
-  },
-  has(key, id) { return Store.get(key, []).includes(id); },
-};
+* , *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--dur-med) var(--ease-soft), color var(--dur-med) var(--ease-soft);
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  color: var(--bordeaux);
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 0 0 var(--space-3);
+  letter-spacing: -0.01em;
+}
+
+p { line-height: 1.7; margin: 0 0 var(--space-3); color: var(--ink); }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+img { max-width: 100%; display: block; }
+ul { list-style: none; margin: 0; padding: 0; }
+
+::selection { background: var(--blush); color: var(--bordeaux-dark); }
+
+/* Barre de défilement discrète */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-thumb { background: var(--blush); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-track { background: transparent; }
+
 
 /* ======================================================================
-   3. NAVIGATION / ROUTEUR
+   3. LAYOUT
    ====================================================================== */
-const ROUTES = [
-  { path: 'accueil',        label: 'Accueil',                emoji: '🏡', render: renderAccueil },
-  { path: 'ouvrir-quand',   label: 'À ouvrir quand…',         emoji: '🤍', desc: 'Pour les moments qui comptent',     render: renderOuvrirQuandListe },
-  { path: 'vlog',           label: 'Mon vlog',                emoji: '📹', desc: 'Un bout de ma journée, pour toi',   render: renderVlog },
-  { path: 'lille',          label: 'Notre Lille',             emoji: '🗺️', desc: 'Les lieux qu\'on veut découvrir',   render: renderLille },
-  { path: 'tenue-sport',    label: 'Ma tenue de sport',       emoji: '👟', desc: 'Choisis-moi une tenue',             render: renderTenueSport },
-  { path: 'youtube',        label: 'YouTube',                 emoji: '▶️', desc: 'Nos vidéos, en un clic',            render: renderYoutube },
-  { path: 'mot-du-jour',    label: 'Le mot du jour',          emoji: '✨', desc: 'Une pensée par jour',               render: renderMotDuJour },
-  { path: 'puissance4',     label: 'Puissance 4',             emoji: '🔴', desc: 'On y joue à deux, en direct',       render: renderPuissance4 },
-  { path: 'surprises',      label: 'Petites surprises',       emoji: '🎁', desc: 'Des enveloppes à ouvrir',           render: renderSurprises },
-];
 
-function currentRoute() {
-  const hash = location.hash.replace('#/', '') || 'accueil';
-  const [base, sub] = hash.split('/');
-  return { base, sub };
+/* --- Header ---------------------------------------------------------*/
+.site-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-4);
+  background: color-mix(in srgb, var(--cream) 82%, transparent);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 1px solid var(--border-soft);
+  z-index: 100;
 }
 
-function navigateTo(path) { location.hash = `#/${path}`; }
-
-function renderRoute() {
-  const { base, sub } = currentRoute();
-  const route = ROUTES.find(r => r.path === base) || ROUTES[0];
-  const app = $('#app');
-
-  // Si la page qu'on quitte a laissé une fonction de nettoyage (ex : le
-  // Puissance 4 qui écoute Firebase en direct), on l'appelle avant de
-  // la remplacer, pour ne pas laisser tourner une connexion pour rien.
-  app.firstElementChild?._cleanup?.();
-
-  app.classList.remove('fade-rise');
-  void app.offsetWidth; // relance l'animation à chaque navigation
-
-  app.innerHTML = '';
-  const pageEl = route.render(sub);
-  app.appendChild(pageEl);
-  app.classList.add('fade-rise');
-
-  // Met à jour le lien actif dans le menu
-  $$('.nav-list a').forEach(a => a.classList.toggle('active', a.dataset.path === base));
-  document.title = `${route.label} · ${D.reglages.titreSite}`;
-  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
-  closeDrawer();
+.brand {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--bordeaux);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
+.brand .brand-heart { color: var(--gold); }
+
+.header-actions { display: flex; align-items: center; gap: var(--space-2); }
+
+.icon-btn {
+  width: 42px; height: 42px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  color: var(--bordeaux);
+  transition: transform var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
+}
+.icon-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.icon-btn svg { width: 20px; height: 20px; }
+
+/* --- Navigation (tiroir latéral) -------------------------------------*/
+.nav-toggle {
+  width: 42px; height: 42px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  display: grid; place-items: center;
+}
+.nav-toggle span, .nav-toggle span::before, .nav-toggle span::after {
+  content: ''; display: block; width: 18px; height: 2px;
+  background: var(--bordeaux); border-radius: 2px; position: relative;
+  transition: transform var(--dur-fast) var(--ease-soft), opacity var(--dur-fast) var(--ease-soft);
+}
+.nav-toggle span::before { position: absolute; top: -6px; }
+.nav-toggle span::after  { position: absolute; top: 6px; }
+.nav-toggle[aria-expanded="true"] span { background: transparent; }
+.nav-toggle[aria-expanded="true"] span::before { transform: translateY(6px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] span::after  { transform: translateY(-6px) rotate(-45deg); }
+
+.nav-drawer {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(360px, 88vw);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  padding: calc(var(--header-h) + var(--space-4)) var(--space-4) var(--space-5);
+  transform: translateX(100%);
+  transition: transform var(--dur-slow) var(--ease-soft);
+  z-index: 99;
+  overflow-y: auto;
+}
+.nav-drawer.open { transform: translateX(0); }
+
+.nav-scrim {
+  position: fixed; inset: 0; background: rgba(58, 40, 48, 0.35);
+  opacity: 0; pointer-events: none; transition: opacity var(--dur-med) var(--ease-soft);
+  z-index: 98; backdrop-filter: blur(2px);
+}
+.nav-scrim.open { opacity: 1; pointer-events: auto; }
+
+.nav-list { display: flex; flex-direction: column; gap: 2px; }
+.nav-list a {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  color: var(--ink); font-size: 0.98rem; font-weight: 500;
+  transition: background var(--dur-fast) var(--ease-soft), color var(--dur-fast) var(--ease-soft), padding-left var(--dur-fast) var(--ease-soft);
+}
+.nav-list a:hover, .nav-list a.active { background: var(--blush-soft); color: var(--bordeaux-dark); padding-left: 20px; }
+.nav-list a .emoji { font-size: 1.1rem; }
+
+/* --- Structure de page ------------------------------------------------*/
+main#app {
+  padding-top: var(--header-h);
+  min-height: 100vh;
+}
+
+.page {
+  padding: var(--space-6) var(--space-4) var(--space-7);
+  max-width: 1080px;
+  margin: 0 auto;
+  animation: pageIn var(--dur-slow) var(--ease-soft);
+}
+
+.page-header { text-align: center; max-width: 640px; margin: 0 auto var(--space-6); }
+.page-header .eyebrow {
+  display: inline-block; font-size: 0.78rem; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--gold); font-weight: 600; margin-bottom: var(--space-2);
+}
+.page-header p { color: var(--ink-soft); }
+
+.section { margin-bottom: var(--space-6); }
+.section-title { display:flex; align-items:baseline; justify-content:space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+.section-title h2 { margin: 0; }
+
+.grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.grid.grid-2 { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+
 
 /* ======================================================================
-   4. COMPOSANTS TRANSVERSES
+   4. COMPOSANTS
    ====================================================================== */
 
-/* --- Modale générique (texte, surprises, blocs media) ------------------*/
-function openModal({ glyph = '', bodyHtml = '', closeLabel = 'Fermer' }) {
-  const scrim = $('#modal-scrim');
-  $('#modal-glyph').textContent = glyph;
-  $('#modal-body').innerHTML = bodyHtml;
-  $('#modal-close').textContent = closeLabel;
-  scrim.classList.add('open');
+/* --- Bouton principal (Apple-like, doux) -----------------------------*/
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 14px 28px;
+  border-radius: var(--radius-pill);
+  border: none;
+  font-size: 0.95rem; font-weight: 600;
+  transition: transform var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft), background var(--dur-fast) var(--ease-soft);
 }
-function closeModal() { $('#modal-scrim').classList.remove('open'); }
+.btn-primary { background: var(--bordeaux); color: var(--cream); box-shadow: var(--shadow-md); }
+.btn-primary:hover { transform: translateY(-2px) scale(1.01); box-shadow: var(--shadow-lg); }
+.btn-primary:active { transform: translateY(0) scale(.99); }
+.btn-ghost { background: transparent; color: var(--bordeaux); border: 1px solid var(--border-soft); }
+.btn-ghost:hover { background: var(--blush-soft); }
+.btn-sm { padding: 9px 18px; font-size: 0.85rem; }
 
-/* --- Rendu d'un bloc de contenu multimédia (utilisé par "à ouvrir
-   quand…" et "surprises") --------------------------------------------- */
-function renderBlock(block) {
-  switch (block.type) {
-    case 'texte':   return `<p>${escapeHtml(block.valeur)}</p>`;
-    case 'image':   return `<img src="${block.src}" alt="" style="border-radius:16px;margin-bottom:12px;" loading="lazy">`;
-    case 'gif':     return `<img src="${block.src}" alt="" style="border-radius:16px;margin-bottom:12px;" loading="lazy">`;
-    case 'video':   return `<video src="${block.src}" controls style="width:100%;border-radius:16px;margin-bottom:12px;"></video>`;
-    case 'youtube': return `<iframe class="embed-frame" src="${block.src}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
-    case 'audio':   return `<audio src="${block.src}" controls style="width:100%;margin-bottom:12px;"></audio>`;
-    case 'spotify': return `<iframe class="embed-frame audio" src="${block.src}" allow="encrypted-media" loading="lazy"></iframe>`;
-    case 'drive':   return `<iframe class="embed-frame" src="${block.src}" allow="autoplay" loading="lazy"></iframe>`;
-    default: return '';
-  }
+/* --- Le grand bouton câlin, avec son halo qui respire ---------------- */
+.hug-wrap { position: relative; display: flex; justify-content: center; margin: var(--space-5) 0; }
+.hug-halo {
+  position: absolute; width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, var(--blush) 0%, transparent 70%);
+  animation: breathe 4.5s var(--ease-soft) infinite;
+  z-index: 0;
 }
-
-/* --- Lightbox photo ------------------------------------------------------*/
-function openLightbox(src) {
-  const lb = $('#lightbox');
-  $('#lightbox-img').src = src;
-  lb.classList.add('open');
-}
-function closeLightbox() { $('#lightbox').classList.remove('open'); $('#lightbox-img').src = ''; }
-
-/* --- Recherche globale ---------------------------------------------------*/
-function buildSearchIndex() {
-  const index = [];
-  ROUTES.forEach(r => index.push({ label: r.label, path: r.path }));
-  D.ouvrirQuand.forEach(o => index.push({ label: o.titre, path: `ouvrir-quand/${o.id}` }));
-  D.lieuxLille.forEach(p => index.push({ label: `Lille, ${p.nom}`, path: `lille` }));
-  D.vlog.forEach(v => index.push({ label: `Vlog, ${v.titre}`, path: `vlog` }));
-  return index;
-}
-function runSearch(query) {
-  const q = query.trim().toLowerCase();
-  const box = $('#search-results');
-  if (!q) { box.innerHTML = `<div class="muted">Cherche une page, une lettre, un lieu…</div>`; return; }
-  const results = buildSearchIndex().filter(i => i.label.toLowerCase().includes(q)).slice(0, 20);
-  box.innerHTML = results.length
-    ? results.map(r => `<a href="#/${r.path}">${escapeHtml(r.label)}</a>`).join('')
-    : `<div class="muted">Rien trouvé, mais ce n'est pas grave 🤍</div>`;
+.btn-hug {
+  position: relative; z-index: 1;
+  padding: 20px 40px; font-size: 1.05rem;
+  background: linear-gradient(135deg, var(--bordeaux), var(--bordeaux-dark));
 }
 
-/* --- Menu latéral ----------------------------------------------------- */
-function toggleDrawer() {
-  const open = !$('#nav-drawer').classList.contains('open');
-  $('#nav-drawer').classList.toggle('open', open);
-  $('#nav-scrim').classList.toggle('open', open);
-  $('#nav-toggle').setAttribute('aria-expanded', String(open));
+/* --- Cartes ------------------------------------------------------------*/
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-soft);
+  transition: transform var(--dur-med) var(--ease-soft), box-shadow var(--dur-med) var(--ease-soft);
 }
-function closeDrawer() {
-  $('#nav-drawer').classList.remove('open');
-  $('#nav-scrim').classList.remove('open');
-  $('#nav-toggle')?.setAttribute('aria-expanded', 'false');
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.card h3 { margin-bottom: 6px; font-size: 1.1rem; }
+.card p { color: var(--ink-soft); font-size: 0.92rem; margin-bottom: 0; }
+
+.card-link { display: block; }
+
+.card-cover {
+  width: 100%; aspect-ratio: 4/3; border-radius: var(--radius-sm);
+  background: var(--surface-alt); overflow: hidden; margin-bottom: var(--space-3);
+  display: grid; place-items: center; color: var(--gold); font-size: 2rem;
+}
+.card-cover img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Carte "à ouvrir quand…" — plus émotionnelle */
+.envelope-card {
+  text-align: center; padding: var(--space-5) var(--space-3);
+  background: linear-gradient(160deg, var(--surface), var(--surface-alt));
+}
+.envelope-card .glyph { font-size: 1.8rem; margin-bottom: var(--space-2); display:block; }
+
+/* --- Modale (fenêtre de phrase / surprise) ---------------------------*/
+.modal-scrim {
+  position: fixed; inset: 0; background: rgba(58, 40, 48, 0.45);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+  opacity: 0; pointer-events: none; transition: opacity var(--dur-med) var(--ease-soft);
+  z-index: 200;
+}
+.modal-scrim.open { opacity: 1; pointer-events: auto; }
+.modal-box {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: var(--space-6) var(--space-5);
+  max-width: 480px; width: 100%; text-align: center;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(24px) scale(.97); opacity: 0;
+  transition: transform var(--dur-slow) var(--ease-soft), opacity var(--dur-slow) var(--ease-soft);
+}
+.modal-scrim.open .modal-box { transform: translateY(0) scale(1); opacity: 1; }
+.modal-box .modal-glyph { font-size: 2rem; margin-bottom: var(--space-3); }
+.modal-box p.modal-text { font-family: var(--font-display); font-size: 1.35rem; color: var(--bordeaux-dark); line-height: 1.5; }
+.modal-close {
+  margin-top: var(--space-4);
+  background: var(--blush-soft); color: var(--bordeaux-dark);
+  padding: 10px 22px; border-radius: var(--radius-pill); border: none; font-weight: 600;
 }
 
-/* --- Thème clair / sombre ------------------------------------------------*/
-function applyTheme(theme) {
-  document.documentElement.setAttribute('data-theme', theme);
-  Store.set('theme', theme);
+/* --- Compteur -----------------------------------------------------------*/
+.counter {
+  display: flex; justify-content: center; gap: var(--space-3); flex-wrap: wrap;
+  margin: var(--space-4) 0;
 }
-function toggleTheme() {
-  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
+.counter-unit {
+  background: var(--surface); border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-3); min-width: 92px; text-align: center;
+  box-shadow: var(--shadow-sm); border: 1px solid var(--border-soft);
+}
+.counter-unit .num { font-family: var(--font-display); font-size: 2.1rem; color: var(--bordeaux); }
+.counter-unit .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft); }
+.counter-select {
+  display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: var(--space-3);
+}
+.chip {
+  padding: 8px 16px; border-radius: var(--radius-pill); border: 1px solid var(--border-soft);
+  background: var(--surface); font-size: 0.82rem; color: var(--ink-soft); font-weight: 500;
+  transition: all var(--dur-fast) var(--ease-soft);
+}
+.chip.active, .chip:hover { background: var(--bordeaux); color: var(--cream); border-color: var(--bordeaux); }
+
+/* --- Bloc citation --------------------------------------------------- */
+.quote-block {
+  text-align: center; padding: var(--space-5); border-radius: var(--radius-lg);
+  background: linear-gradient(150deg, var(--blush-soft), var(--cream-2));
+  border: 1px solid var(--border-soft);
+}
+.quote-block p { font-family: var(--font-display); font-style: italic; font-size: 1.3rem; color: var(--bordeaux-dark); margin: 0; }
+
+/* --- Météo -------------------------------------------------------------*/
+.weather-card { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); }
+.weather-row { display: flex; align-items: center; gap: var(--space-3); }
+.weather-row:not(:last-child) { padding-bottom: var(--space-3); border-bottom: 1px solid var(--border-soft); }
+.weather-icon { font-size: 2.2rem; }
+.weather-temp { font-family: var(--font-display); font-size: 1.7rem; color: var(--bordeaux); }
+.weather-note { color: var(--ink-soft); font-style: italic; margin-top: var(--space-2); font-family: var(--font-display); }
+
+/* --- Timeline (souvenirs) ---------------------------------------------*/
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before {
+  content: ''; position: absolute; left: 8px; top: 6px; bottom: 6px; width: 2px;
+  background: linear-gradient(var(--blush), var(--gold-soft));
+}
+.timeline-year { font-family: var(--font-display); color: var(--gold); font-size: 1.4rem; margin: var(--space-5) 0 var(--space-3); }
+.timeline-item { position: relative; margin-bottom: var(--space-4); }
+.timeline-item::before {
+  content: ''; position: absolute; left: -28px; top: 6px; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--bordeaux); box-shadow: 0 0 0 4px var(--blush-soft);
+}
+.timeline-item .month { font-size: 0.78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--gold); font-weight: 600; }
+
+/* --- Checklists (projets) -----------------------------------------------*/
+.checklist { display: flex; flex-direction: column; gap: 10px; }
+.check-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  border-radius: var(--radius-sm); background: var(--surface-alt);
+  transition: background var(--dur-fast) var(--ease-soft);
+}
+.check-row.done { opacity: .55; }
+.check-row.done span.check-label { text-decoration: line-through; }
+.check-box {
+  width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--bordeaux);
+  display: grid; place-items: center; flex-shrink: 0; color: var(--cream);
+  background: transparent; transition: all var(--dur-fast) var(--ease-soft);
+}
+.check-row.done .check-box { background: var(--bordeaux); }
+
+/* --- Favoris (étoile) ----------------------------------------------------*/
+.fav-btn { background: none; border: none; font-size: 1.3rem; color: var(--gold-soft); }
+.fav-btn.active { color: var(--gold); }
+
+/* --- Lieux (Notre Lille / restaurants) ------------------------------- */
+.place-card { display: flex; flex-direction: column; }
+.place-meta { display: flex; gap: var(--space-3); font-size: 0.8rem; color: var(--ink-soft); margin: 6px 0; flex-wrap: wrap; }
+.place-actions { display: flex; gap: 8px; margin-top: var(--space-2); flex-wrap: wrap; }
+
+/* --- Bibliothèque (lettres / poèmes / films) --------------------------*/
+.lib-filter { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--space-4); }
+
+.letter-reader {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: var(--space-6); box-shadow: var(--shadow-md);
+  max-width: 680px; margin: 0 auto;
+}
+.letter-reader .letter-date { color: var(--gold); font-size: 0.82rem; text-transform: uppercase; letter-spacing: .08em; }
+.letter-reader h2 { margin-top: var(--space-2); }
+.letter-reader .letter-body { font-family: var(--font-display); font-size: 1.15rem; line-height: 1.9; white-space: pre-line; color: var(--ink); }
+
+/* --- Galerie photo + lightbox ------------------------------------------*/
+.photo-grid { columns: 3 220px; column-gap: var(--space-3); }
+.photo-grid img {
+  width: 100%; margin-bottom: var(--space-3); border-radius: var(--radius-sm);
+  cursor: zoom-in; transition: transform var(--dur-fast) var(--ease-soft);
+  box-shadow: var(--shadow-sm);
+}
+.photo-grid img:hover { transform: scale(1.02); }
+
+.lightbox {
+  position: fixed; inset: 0; background: rgba(20,10,14,.9);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity var(--dur-med) var(--ease-soft);
+  z-index: 300; padding: var(--space-4);
+}
+.lightbox.open { opacity: 1; pointer-events: auto; }
+.lightbox img { max-width: 92vw; max-height: 86vh; border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); }
+.lightbox-close { position: absolute; top: 24px; right: 24px; color: var(--cream); background: rgba(255,255,255,.12); }
+
+/* --- Enveloppes (surprises) ---------------------------------------------*/
+.envelope { position: relative; cursor: pointer; text-align: center; padding: var(--space-5) var(--space-3); }
+.envelope .flap { font-size: 2.4rem; transition: transform var(--dur-med) var(--ease-soft); display: inline-block; }
+.envelope:hover .flap { transform: translateY(-4px) rotate(-4deg); }
+.envelope.opened { opacity: .5; }
+
+/* --- Recherche globale ------------------------------------------------*/
+.search-overlay {
+  position: fixed; inset: 0; background: rgba(58,40,48,.4); backdrop-filter: blur(6px);
+  z-index: 250; display: flex; align-items: flex-start; justify-content: center;
+  padding: 10vh var(--space-4) var(--space-4);
+  opacity: 0; pointer-events: none; transition: opacity var(--dur-med) var(--ease-soft);
+}
+.search-overlay.open { opacity: 1; pointer-events: auto; }
+.search-panel { background: var(--surface); border-radius: var(--radius-lg); width: min(560px, 100%); box-shadow: var(--shadow-lg); overflow: hidden; }
+.search-input {
+  width: 100%; border: none; padding: 20px 24px; font-size: 1.05rem;
+  background: transparent; color: var(--ink); font-family: var(--font-body);
+  border-bottom: 1px solid var(--border-soft);
+}
+.search-input:focus { outline: none; }
+.search-results { max-height: 50vh; overflow-y: auto; }
+.search-results a { display: block; padding: 14px 24px; color: var(--ink); border-bottom: 1px solid var(--border-soft); }
+.search-results a:hover { background: var(--blush-soft); }
+.search-results .muted { padding: 20px 24px; color: var(--ink-soft); font-size: 0.9rem; }
+
+/* --- "Je pense à toi" bouton flottant -----------------------------------*/
+.floating-btn {
+  position: fixed; right: var(--space-4); bottom: var(--space-4);
+  z-index: 60; box-shadow: var(--shadow-md);
 }
 
-/* --- Météo (Open-Meteo, gratuit, sans clé) --------------------------- */
-const WEATHER_CODES = {
-  0: ['☀️', 'ciel dégagé'], 1: ['🌤️', 'plutôt clair'], 2: ['⛅', 'partiellement nuageux'],
-  3: ['☁️', 'couvert'], 45: ['🌫️', 'brumeux'], 48: ['🌫️', 'brumeux'],
-  51: ['🌦️', 'bruine légère'], 61: ['🌧️', 'pluie légère'], 63: ['🌧️', 'pluie'],
-  65: ['🌧️', 'forte pluie'], 71: ['🌨️', 'neige légère'], 73: ['🌨️', 'neige'],
-  75: ['❄️', 'forte neige'], 80: ['🌦️', 'averses'], 95: ['⛈️', 'orage'],
-};
-async function fetchWeatherFor(ville) {
-  try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${ville.lat}&longitude=${ville.lon}&current=temperature_2m,weather_code`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const code = data.current.weather_code;
-    const [icon, desc] = WEATHER_CODES[code] || ['🌥️', 'temps changeant'];
-    return { ok: true, nom: ville.nom, icon, desc, temp: Math.round(data.current.temperature_2m) };
-  } catch {
-    return { ok: false, nom: ville.nom };
-  }
-}
+/* --- Footer -------------------------------------------------------------*/
+.site-footer { text-align: center; padding: var(--space-6) var(--space-4); color: var(--ink-soft); font-size: 0.85rem; }
+.site-footer .heart { color: var(--gold); }
 
-async function loadWeather(container) {
-  const villes = D.reglages.meteoVilles || [];
-  if (!villes.length) { container.innerHTML = `<div style="color:var(--ink-soft);font-size:.9rem;">Aucune ville configurée.</div>`; return; }
-  const resultats = await Promise.all(villes.map(fetchWeatherFor));
-  container.innerHTML = resultats.map(r => r.ok ? `
-    <div class="weather-row">
-      <div class="weather-icon">${r.icon}</div>
-      <div>
-        <div class="weather-temp">${r.temp}°C</div>
-        <div style="color:var(--ink-soft);font-size:.85rem;">${r.desc} à ${r.nom}</div>
-      </div>
-    </div>` : `<div style="color:var(--ink-soft);font-size:.85rem;">Météo indisponible pour ${r.nom}.</div>`
-  ).join('');
-}
+/* --- Effet d'étoiles discret (canvas overlay) ----------------------------*/
+#ambient-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .5; }
 
-/* --- Compteur ----------------------------------------------------------- */
-let counterTimer = null;
-function mountCounter(container, compteurId) {
-  clearInterval(counterTimer);
-  const conf = D.compteurs.find(c => c.id === compteurId) || D.compteurs[0];
-  const target = new Date(conf.date).getTime();
-
-  function tick() {
-    const diff = target - Date.now();
-    const abs = Math.abs(diff);
-    const j = Math.floor(abs / 86400000);
-    const h = Math.floor((abs % 86400000) / 3600000);
-    const m = Math.floor((abs % 3600000) / 60000);
-    const s = Math.floor((abs % 60000) / 1000);
-    container.querySelector('.counter-caption').textContent =
-      (diff >= 0 ? conf.label : `depuis : ${conf.label.replace(/^avant\s*/i, '')}`);
-    container.querySelector('.counter').innerHTML = `
-      <div class="counter-unit"><div class="num">${j}</div><div class="label">jours</div></div>
-      <div class="counter-unit"><div class="num">${h}</div><div class="label">heures</div></div>
-      <div class="counter-unit"><div class="num">${m}</div><div class="label">min</div></div>
-      <div class="counter-unit"><div class="num">${s}</div><div class="label">sec</div></div>`;
-  }
-  tick();
-  counterTimer = setInterval(tick, 1000);
-}
 
 /* ======================================================================
-   5. RENDU DES PAGES
+   5. PAGES SPÉCIFIQUES
    ====================================================================== */
+.home-hero { text-align: center; padding-top: var(--space-4); position: relative; overflow: hidden; }
+.home-hero > *:not(.bg-blob):not(.bg-decor) { position: relative; z-index: 1; }
+.bg-decor {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: .55; z-index: 0; pointer-events: none;
+}
+.bg-blob {
+  position: absolute; border-radius: 50%; filter: blur(60px);
+  opacity: .5; pointer-events: none; z-index: 0;
+}
+.bg-blob-1 { width: 420px; height: 420px; top: -120px; left: -140px; background: var(--blush); }
+.bg-blob-2 { width: 380px; height: 380px; bottom: 10%; right: -160px; background: var(--gold-soft); }
+@media (max-width: 640px) {
+  .bg-blob-1, .bg-blob-2 { width: 260px; height: 260px; filter: blur(40px); }
+}
+.home-hero h1 { font-size: clamp(2.1rem, 5vw, 3.1rem); }
+.home-hero .subtitle { color: var(--ink-soft); max-width: 480px; margin: 0 auto var(--space-3); }
 
-/* --- Carrousel de photos (accueil) ---------------------------------------
-   Utilise le défilement natif du navigateur (scroll-snap) plutôt que des
-   calculs de position en JS : c'est ce qui rend le glisser aussi fluide
-   qu'une vraie application, y compris au doigt sur téléphone. */
-function mountCarousel(page) {
-  const photos = D.reglages.carrouselAccueil;
-  const track = page.querySelector('#carousel-track');
-  const dotsEl = page.querySelector('#carousel-dots');
-
-  track.innerHTML = photos.map(p =>
-    `<div class="carousel-slide"><img src="${p.src}" alt="${escapeHtml(p.alt || '')}" loading="lazy"><span class="carousel-heart">♥</span></div>`
-  ).join('');
-  dotsEl.innerHTML = photos.map((_, i) =>
-    `<button class="carousel-dot ${i === 0 ? 'active' : ''}" data-i="${i}" aria-label="Photo ${i + 1}"></button>`
-  ).join('');
-
-  const slides = $$('.carousel-slide', track);
-  function markActive(idx) {
-    slides.forEach((s, i) => s.classList.toggle('is-active', i === idx));
-  }
-  markActive(0);
-
-  function currentIndex() {
-    const center = track.getBoundingClientRect().left + track.getBoundingClientRect().width / 2;
-    let closest = 0, min = Infinity;
-    slides.forEach((s, i) => {
-      const r = s.getBoundingClientRect();
-      const d = Math.abs((r.left + r.width / 2) - center);
-      if (d < min) { min = d; closest = i; }
-    });
-    return closest;
-  }
-  function goTo(i) {
-    slides[Math.max(0, Math.min(slides.length - 1, i))]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  }
-
-  page.querySelector('#carousel-prev').addEventListener('click', () => goTo(currentIndex() - 1));
-  page.querySelector('#carousel-next').addEventListener('click', () => goTo(currentIndex() + 1));
-  dotsEl.addEventListener('click', e => {
-    const btn = e.target.closest('[data-i]'); if (!btn) return;
-    goTo(parseInt(btn.dataset.i, 10));
-  });
-
-  let ticking = false;
-  track.addEventListener('scroll', () => {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => {
-      const idx = currentIndex();
-      $$('.carousel-dot', dotsEl).forEach((d, i) => d.classList.toggle('active', i === idx));
-      markActive(idx);
-      ticking = false;
-    });
-  });
+/* --- Grille compacte des widgets "pour rire" ----------------------------- */
+.widget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 120px));
+  justify-content: center;
+  gap: 12px;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.widget-tile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; padding: 18px 8px;
+  background: var(--surface); border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft); box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
+}
+.widget-tile:hover { transform: translateY(-3px) scale(1.02); box-shadow: var(--shadow-md); }
+.widget-tile:active { transform: translateY(0) scale(.98); }
+.widget-icon {
+  width: 46px; height: 46px; display: grid; place-items: center;
+  font-size: 1.4rem; border-radius: var(--radius-pill);
+  background: var(--blush-soft);
+}
+/* légère variation de couleur pour que la grille respire, comme un vrai écran de widgets */
+.widget-tile:nth-child(3n+2) .widget-icon { background: var(--gold-soft); }
+.widget-tile:nth-child(3n+3) .widget-icon { background: var(--cream-2); }
+.widget-label {
+  font-size: 0.76rem; font-weight: 600; color: var(--ink);
+  text-align: center; line-height: 1.25;
 }
 
-/* --- Page d'accueil ------------------------------------------------------*/
-function renderAccueil() {
-  const page = el(`<div class="page home-hero">
-    ${D.reglages.fondDecoratif
-      ? `<img class="bg-decor" src="${D.reglages.fondDecoratif}" alt="" aria-hidden="true" loading="lazy">`
-      : `<div class="bg-blob bg-blob-1" aria-hidden="true"></div><div class="bg-blob bg-blob-2" aria-hidden="true"></div>`}
-    <span class="page-header eyebrow" style="display:block;">Bienvenue</span>
-    <h1>${escapeHtml(D.reglages.titreSite)} <span style="color:var(--gold);">♥</span></h1>
-    <p class="subtitle">Un endroit rien qu'à toi. Rien à écrire, rien à répondre, juste à te poser.</p>
-    ${D.reglages.carrouselAccueil?.length ? `
-    <div class="carousel-wrap" id="carousel-wrap">
-      <button class="carousel-arrow carousel-prev" id="carousel-prev" aria-label="Photo précédente">‹</button>
-      <div class="carousel-track" id="carousel-track"></div>
-      <button class="carousel-arrow carousel-next" id="carousel-next" aria-label="Photo suivante">›</button>
-    </div>
-    <div class="carousel-dots" id="carousel-dots"></div>` : ''}
+/* --- Cartes des pages ("Explorer notre univers") -------------------------- */
+.page-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-3);
+  max-width: 880px;
+  margin: 0 auto;
+}
+.page-card {
+  display: block; text-align: left;
+  background: var(--surface); border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft); box-shadow: var(--shadow-sm);
+  padding: var(--space-4);
+  transition: transform var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
+}
+.page-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.page-card-icon {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  font-size: 1.3rem; border-radius: var(--radius-pill);
+  background: var(--blush-soft); margin-bottom: var(--space-2);
+}
+.page-card:nth-child(3n+2) .page-card-icon { background: var(--gold-soft); }
+.page-card:nth-child(3n+3) .page-card-icon { background: var(--cream-2); }
+.page-card h3 { font-size: 1.02rem; margin-bottom: 4px; }
+.page-card p { font-size: 0.85rem; color: var(--ink-soft); margin: 0; }
 
-    <div class="hug-wrap">
-      <div class="hug-halo"></div>
-      <button class="btn btn-primary btn-hug" id="btn-hug">J'ai besoin d'un câlin 🤍</button>
-    </div>
 
-    <div class="section" style="max-width:520px;margin:0 auto;">
-      <div class="counter-select" id="counter-select"></div>
-      <div class="counter" aria-live="polite"></div>
-      <p class="counter-caption" style="text-align:center;color:var(--ink-soft);font-size:.85rem;"></p>
-    </div>
+.moodboard { columns: 3 220px; column-gap: var(--space-3); }
+.moodboard img { width: 100%; margin-bottom: var(--space-3); border-radius: var(--radius-sm); }
 
-    <div class="section">
-      <div class="widget-grid" id="widget-grid"></div>
-    </div>
+.embed-frame { width: 100%; aspect-ratio: 16/9; border: none; border-radius: var(--radius-sm); }
+.embed-frame.audio { aspect-ratio: auto; height: 152px; }
+.embed-frame.map { aspect-ratio: 4/3; }
 
-    <div class="section card daily-panel" style="max-width:420px;margin:0 auto;">
-      <div class="daily-panel-title">🚽 Aujourd'hui</div>
-      <div class="daily-panel-row">
-        <button class="daily-btn" id="caca-lorvencia" type="button">Lorvencia <span class="daily-count" id="caca-lorvencia-n">0</span></button>
-        <button class="daily-btn" id="caca-ethan" type="button">Ethan <span class="daily-count" id="caca-ethan-n">0</span></button>
-      </div>
-      <button class="btn btn-primary btn-sm" id="btn-uber-quick" style="width:100%;margin-top:12px;">🍔 Demander un Uber Eats</button>
-    </div>
-
-    <div class="section quote-block" style="max-width:520px;margin:0 auto;">
-      <p id="quote-of-day"></p>
-    </div>
-
-    <div class="section card weather-card" style="max-width:520px;margin:0 auto;text-align:left;" id="weather-box">
-      <div style="color:var(--ink-soft);">Chargement de la météo…</div>
-    </div>
-    <p class="weather-note" style="max-width:520px;margin:0 auto;">Peu importe la météo dehors, j'espère qu'il fera toujours un peu plus beau dans ton cœur.</p>
-
-    <div class="section">
-      <div class="section-title" style="justify-content:center;"><h2 style="font-size:1rem;color:var(--ink-soft);font-family:var(--font-body);font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Explorer notre univers</h2></div>
-      <div class="page-card-grid" id="page-card-grid"></div>
-    </div>
-  </div>`);
-
-  // Citation du jour (manuelle si définie, sinon automatique)
-  const quote = D.citationManuelle || D.citations[indexOfDay(D.citations.length)];
-  page.querySelector('#quote-of-day').textContent = `« ${quote} »`;
-
-  // Bouton câlin → phrase aléatoire dans une modale
-  page.querySelector('#btn-hug').addEventListener('click', () => {
-    openModal({ glyph: '🤍', bodyHtml: `<p class="modal-text">${escapeHtml(pick(D.phrasesCalin))}</p>` });
-  });
-
-  // Sélecteur de compteur
-  const select = page.querySelector('#counter-select');
-  select.innerHTML = D.compteurs.map((c, i) =>
-    `<button class="chip ${i === 0 ? 'active' : ''}" data-id="${c.id}">${escapeHtml(c.label)}</button>`
-  ).join('');
-  select.addEventListener('click', e => {
-    const btn = e.target.closest('.chip'); if (!btn) return;
-    $$('.chip', select).forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    mountCounter(page, btn.dataset.id);
-  });
-  mountCounter(page, D.compteurs[0]?.id);
-
-  // Météo
-  loadWeather(page.querySelector('#weather-box'));
-
-  // Carrousel de photos
-  if (D.reglages.carrouselAccueil?.length) mountCarousel(page);
-
-  // Widgets compacts "pour rire" — s'affichent en petites tuiles carrées.
-  // Ce qui apparaît ici (et dans quel ordre) se règle dans data.js,
-  // section "widgetsAmusants".
-  const FUN_WIDGETS = {
-    envie:      { emoji: '💬', label: 'Une envie',            onClick: openEnvieWidget },
-    meteo:      { emoji: '🌤️', label: 'Météo',                 onClick: openWeatherWidget },
-    toilettes:  { emoji: '🚽', label: 'Compteur toilettes',   onClick: openToiletCounter },
-  };
-  const widgetKeys = D.reglages.widgetsAmusants || [];
-  page.querySelector('#widget-grid').innerHTML = widgetKeys
-    .map(key => FUN_WIDGETS[key] ? { ...FUN_WIDGETS[key], key } : null)
-    .filter(Boolean)
-    .map(w => `<button class="widget-tile" data-fun="${w.key}" type="button"><span class="widget-icon">${w.emoji}</span><span class="widget-label">${escapeHtml(w.label)}</span></button>`)
-    .join('');
-  page.querySelectorAll('[data-fun]').forEach(btn => {
-    btn.addEventListener('click', () => FUN_WIDGETS[btn.dataset.fun].onClick());
-  });
-
-  // Cartes des pages — toutes les pages du site (ROUTES, sauf l'accueil
-  // lui-même), avec icône, titre et petite description, façon vitrine.
-  page.querySelector('#page-card-grid').innerHTML = ROUTES
-    .filter(r => r.path !== 'accueil')
-    .map(r => `
-      <a class="page-card" href="#/${r.path}">
-        <span class="page-card-icon">${r.emoji}</span>
-        <h3>${escapeHtml(r.label)}</h3>
-        <p>${escapeHtml(r.desc || '')}</p>
-      </a>`)
-    .join('');
-
-  // Petit panneau du jour, toujours visible (pas besoin de cliquer) —
-  // le compteur ne se réinitialise jamais : chaque jour garde son propre
-  // total, l'historique complet reste dans le navigateur.
-  const CACA_KEY = 'compteur-toilettes-jours';
-  const todayKey = () => new Date().toISOString().slice(0, 10);
-  function bumpCaca(personne) {
-    const data = Store.get(CACA_KEY, {});
-    const jour = todayKey();
-    data[jour] = data[jour] || { lorvencia: 0, ethan: 0 };
-    data[jour][personne]++;
-    Store.set(CACA_KEY, data);
-    paintCaca();
-  }
-  function paintCaca() {
-    const data = Store.get(CACA_KEY, {});
-    const today = data[todayKey()] || { lorvencia: 0, ethan: 0 };
-    page.querySelector('#caca-lorvencia-n').textContent = today.lorvencia;
-    page.querySelector('#caca-ethan-n').textContent = today.ethan;
-  }
-  paintCaca();
-  page.querySelector('#caca-lorvencia').addEventListener('click', () => bumpCaca('lorvencia'));
-  page.querySelector('#caca-ethan').addEventListener('click', () => bumpCaca('ethan'));
-
-  // Bouton rapide Uber Eats — envoie directement le message par WhatsApp,
-  // sans passer par la fenêtre "Une envie".
-  page.querySelector('#btn-uber-quick').addEventListener('click', () => {
-    const preset = (D.envies || []).find(e => /uber\s*eats/i.test(e.label)) || { message: "J'ai envie d'un Uber Eats ce soir 🍔" };
-    const numero = (D.reglages.telephoneContact || '').replace(/[^\d+]/g, '');
-    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(preset.message)}`, '_blank');
-  });
-
-  return page;
+/* --- Photo de couverture (page d'accueil) ------------------------------ */
+.hero-photo-wrap { display: flex; justify-content: center; margin: var(--space-5) auto; }
+.hero-photo {
+  width: min(320px, 80vw); aspect-ratio: 3/4; object-fit: cover;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 0 6px var(--surface), 0 0 0 12px var(--blush-soft), var(--shadow-lg);
+  animation: floatUp var(--dur-slow) var(--ease-soft);
 }
 
-/* --- "Une envie" : message rapide envoyé par WhatsApp / SMS / email ------
-   iOS et Android n'utilisent pas exactement le même format pour les liens
-   "sms:" (Android veut un "?" avant "body=", iOS veut un "&"). On détecte
-   la plateforme pour éviter que le message n'apparaisse pas prérempli. */
-function isIOS() { return /iPhone|iPad|iPod/i.test(navigator.userAgent); }
-
-function openEnvieWidget() {
-  const { telephoneContact, emailContact } = D.reglages;
-  const presets = D.envies;
-
-  function paint(currentMessage = '') {
-    openModal({
-      glyph: '💬',
-      bodyHtml: `
-        <h3 style="margin-bottom:14px;">Une envie, là maintenant ?</h3>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px;">
-          ${presets.map((p, i) => `<button class="chip" data-preset="${i}">${p.emoji} ${escapeHtml(p.label)}</button>`).join('')}
-        </div>
-        <input type="text" id="envie-text" value="${escapeHtml(currentMessage)}" placeholder="Ou écris ton propre message…"
-          style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--border-soft);background:var(--surface);color:var(--ink);font-family:var(--font-body);font-size:0.92rem;margin-bottom:14px;">
-        <div class="form-actions" style="justify-content:center;">
-          <button class="btn btn-primary btn-sm" id="envie-whatsapp">📱 WhatsApp</button>
-          <button class="btn btn-ghost btn-sm" id="envie-sms">✉️ SMS</button>
-          <button class="btn btn-ghost btn-sm" id="envie-email">📧 Email</button>
-        </div>`,
-    });
-
-    $$('[data-preset]').forEach(btn => btn.addEventListener('click', () => {
-      paint(presets[btn.dataset.preset].message);
-    }));
-
-    function getMessage() {
-      return $('#envie-text').value.trim();
-    }
-    $('#envie-whatsapp').addEventListener('click', () => {
-      const msg = getMessage(); if (!msg) return;
-      window.open(`https://wa.me/${telephoneContact.replace(/[^\d+]/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
-    });
-    $('#envie-sms').addEventListener('click', () => {
-      const msg = getMessage(); if (!msg) return;
-      const sep = isIOS() ? '&' : '?';
-      window.location.href = `sms:${telephoneContact.replace(/[^\d+]/g, '')}${sep}body=${encodeURIComponent(msg)}`;
-    });
-    $('#envie-email').addEventListener('click', () => {
-      const msg = getMessage(); if (!msg) return;
-      window.location.href = `mailto:${emailContact}?subject=${encodeURIComponent('Une petite envie 💬')}&body=${encodeURIComponent(msg)}`;
-    });
-  }
-  paint();
+/* --- Badge "top personnel" sur les cartes de lieux ---------------------- */
+.card { position: relative; }
+.badge-top {
+  position: absolute; top: 14px; right: 14px;
+  background: var(--gold); color: var(--white);
+  font-size: 0.72rem; font-weight: 700; padding: 4px 10px;
+  border-radius: var(--radius-pill); box-shadow: var(--shadow-sm);
+  z-index: 2;
 }
 
-/* --- Petit widget météo, en fenêtre (réutilise loadWeather) ------------- */
-function openWeatherWidget() {
-  openModal({ glyph: '🌤️', bodyHtml: `<h3 style="margin-bottom:14px;">Le temps dehors</h3><div class="weather-card" id="weather-modal-box" style="justify-content:center;text-align:left;">Chargement…</div>` });
-  loadWeather($('#weather-modal-box'));
+/* --- Carte interactive Leaflet (Notre Lille) ---------------------------- */
+.leaflet-map {
+  width: 100%; height: 420px; border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md); border: 1px solid var(--border-soft);
+  margin-bottom: var(--space-4); background: var(--surface-alt);
+}
+.map-status {
+  text-align: center; font-size: 0.82rem; color: var(--ink-soft);
+  margin-bottom: var(--space-3);
+}
+.leaflet-popup-content-wrapper { border-radius: var(--radius-sm) !important; font-family: var(--font-body); }
+.leaflet-popup-content b { font-family: var(--font-display); color: var(--bordeaux); }
+
+/* --- Formulaire "Ma tenue de sport" -------------------------------------- */
+.form-row {
+  display: grid; grid-template-columns: 1.2fr 1.4fr .7fr 1fr auto;
+  gap: 10px; margin-bottom: 10px; align-items: center;
+}
+.form-row input {
+  width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft); background: var(--surface);
+  color: var(--ink); font-family: var(--font-body); font-size: 0.9rem;
+}
+.form-row input:focus { outline: none; border-color: var(--bordeaux); }
+.form-remove {
+  width: 38px; height: 38px; border-radius: var(--radius-pill); border: none;
+  background: var(--blush-soft); color: var(--bordeaux-dark); font-size: 1rem;
+}
+.form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: var(--space-4); }
+.form-note { font-size: 0.8rem; color: var(--ink-soft); margin-top: var(--space-2); }
+.inspiration-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px; border-radius: var(--radius-pill); background: var(--surface-alt);
+  font-size: 0.82rem; margin: 0 8px 8px 0;
 }
 
-/* --- Le compteur toilettes, juste pour rire 😄 ---------------------------
-   Chaque appareil garde son propre total (pas de synchronisation entre
-   vos deux téléphones, ce serait un peu trop d'ingénierie pour une blague). */
-function openToiletCounter() {
-  const key = 'compteur-toilettes';
-  let counts = Store.get(key, { lorvencia: 0, ethan: 0 });
-
-  function paint() {
-    openModal({
-      glyph: '🚽',
-      bodyHtml: `
-        <h3 style="margin-bottom:16px;">Le compteur (pour rire)</h3>
-        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;">
-          <div class="counter-unit"><div class="num">${counts.lorvencia}</div><div class="label">Lorvencia</div></div>
-          <div class="counter-unit"><div class="num">${counts.ethan}</div><div class="label">Ethan</div></div>
-        </div>
-        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-          <button class="btn btn-primary btn-sm" id="tc-lorvencia">+1 Lorvencia</button>
-          <button class="btn btn-primary btn-sm" id="tc-ethan">+1 Ethan</button>
-        </div>
-        <button class="btn btn-ghost btn-sm" id="tc-reset" style="margin-top:14px;">Réinitialiser</button>
-        <p style="font-size:.75rem;color:var(--ink-soft);margin-top:12px;">Compteur propre à cet appareil : chacun garde le sien de son côté.</p>`,
-    });
-    $('#tc-lorvencia').addEventListener('click', () => { counts.lorvencia++; Store.set(key, counts); paint(); });
-    $('#tc-ethan').addEventListener('click', () => { counts.ethan++; Store.set(key, counts); paint(); });
-    $('#tc-reset').addEventListener('click', () => { counts = { lorvencia: 0, ethan: 0 }; Store.set(key, counts); paint(); });
-  }
-  paint();
+@media (max-width: 700px) {
+  .form-row { grid-template-columns: 1fr 1fr; }
+  .form-row input:nth-child(1), .form-row input:nth-child(2) { grid-column: 1 / -1; }
 }
 
-/* --- À ouvrir quand… (liste) ---------------------------------------------*/
-function renderOuvrirQuandListe() {
-  const page = el(`<div class="page">
-    <div class="page-header">
-      <span class="eyebrow">Pour les moments qui comptent</span>
-      <h1>À ouvrir quand…</h1>
-      <p>Choisis ce que tu ressens maintenant. Il n'y a pas de mauvaise réponse.</p>
-    </div>
-    <div class="grid" id="oq-grid"></div>
-  </div>`);
-  page.querySelector('#oq-grid').innerHTML = D.ouvrirQuand.map(o => `
-    <a class="card envelope-card card-link" href="#/ouvrir-quand/${o.id}">
-      <span class="glyph">${o.icone}</span>
-      <h3>${escapeHtml(o.titre)}</h3>
-    </a>`).join('');
-  return page;
+/* --- Puissance 4 ---------------------------------------------------------- */
+.c4-board {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  background: var(--surface-alt);
+  padding: 10px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-soft);
+}
+.c4-cell {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: none;
+  background: var(--cream);
+  box-shadow: inset 0 2px 5px rgba(58, 40, 48, 0.12);
+  transition: transform var(--dur-fast) var(--ease-soft), background var(--dur-fast) var(--ease-soft);
+}
+.c4-cell:hover { transform: scale(1.06); }
+.c4-cell.rouge { background: var(--bordeaux); }
+.c4-cell.jaune { background: var(--gold); }
+.c4-cell.c4-pop { animation: c4Drop 0.38s var(--ease-soft); }
+@keyframes c4Drop {
+  0%   { transform: translateY(-140%) scale(0.85); opacity: 0.5; }
+  70%  { transform: translateY(6%); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* --- À ouvrir quand… (détail) --------------------------------------------*/
-function renderOuvrirQuandDetail(id) {
-  const item = D.ouvrirQuand.find(o => o.id === id);
-  if (!item) return renderOuvrirQuandListe();
-  const page = el(`<div class="page">
-    <a href="#/ouvrir-quand" class="btn btn-ghost btn-sm" style="margin-bottom:24px;">← Retour</a>
-    <div class="letter-reader">
-      <span class="glyph" style="font-size:2rem;">${item.icone}</span>
-      <h2>${escapeHtml(item.titre)}</h2>
-      <div id="oq-content"></div>
-    </div>
-  </div>`);
-  page.querySelector('#oq-content').innerHTML = item.contenu.map(renderBlock).join('');
-  return page;
-}
 
-/* --- Mon vlog (épisodes vidéo/photo du jour, du plus récent au plus ancien) --*/
-function renderVlog() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Un bout de ma journée, pour toi</span><h1>Mon vlog</h1><p>Un petit épisode déposé de temps en temps, pour que tu te sentes un peu avec moi.</p></div>
-    <div class="grid" id="vlog-grid"></div>
-  </div>`);
-  const grid = page.querySelector('#vlog-grid');
-  const sorted = [...D.vlog].sort((a, b) => b.date.localeCompare(a.date));
-
-  if (!sorted.length) {
-    grid.innerHTML = emptyState('📹', "Pas encore d'épisode, ajoute-en dans js/data.js, section « vlog ».");
-    return page;
-  }
-
-  grid.innerHTML = sorted.map((v, i) => `
-    <button class="card card-link" style="text-align:left;width:100%;border:none;" data-i="${sorted.indexOf(v)}">
-      <div class="card-cover">${v.miniature ? `<img src="${v.miniature}" alt="">` : (v.type === 'photo' && v.src ? `<img src="${v.src}" alt="">` : '📹')}</div>
-      <div class="letter-date">${formatDateLong(v.date)}</div>
-      <h3>${escapeHtml(v.titre)}</h3>
-      <p>${escapeHtml(v.texte || '')}</p>
-    </button>`).join('');
-
-  grid.addEventListener('click', e => {
-    const btn = e.target.closest('[data-i]'); if (!btn) return;
-    const v = sorted[btn.dataset.i];
-    let mediaHtml = '';
-    if (v.type === 'mp4' && v.src)      mediaHtml = `<video src="${v.src}" controls style="width:100%;border-radius:16px;margin-bottom:12px;"></video>`;
-    else if (v.type === 'youtube' && v.src) mediaHtml = `<iframe class="embed-frame" src="${v.src}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
-    else if (v.type === 'drive' && v.src)   mediaHtml = `<iframe class="embed-frame" src="${v.src}" allow="autoplay" loading="lazy"></iframe>`;
-    else if (v.type === 'photo' && v.src)   mediaHtml = `<img src="${v.src}" alt="" style="border-radius:16px;margin-bottom:12px;width:100%;">`;
-    openModal({
-      glyph: '📹',
-      bodyHtml: `<div class="letter-date">${formatDateLong(v.date)}</div><h3 style="margin:6px 0 12px;">${escapeHtml(v.titre)}</h3>${mediaHtml}${v.texte ? `<p>${escapeHtml(v.texte)}</p>` : ''}`,
-    });
-  });
-  return page;
-}
-
-/* --- Notre Lille -----------------------------------------------------------*/
-function renderLille() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Notre prochain chapitre</span><h1>Notre Lille</h1><p>Les lieux qu'on veut découvrir, un par un.</p></div>
-    <div class="map-status" id="map-status">Chargement de la carte…</div>
-    <div class="leaflet-map" id="lille-map"></div>
-    <div class="lib-filter" id="lille-filter"></div>
-    <div class="grid" id="lille-grid"></div>
-  </div>`);
-
-  const cats = ['Tous', ...new Set(D.lieuxLille.map(l => l.categorie))];
-  page.querySelector('#lille-filter').innerHTML = cats.map((c, i) =>
-    `<button class="chip ${i === 0 ? 'active' : ''}" data-cat="${c}">${escapeHtml(c)}</button>`).join('');
-
-  const favKey = 'lille-favoris';
-  function paint(filter = 'Tous') {
-    const grid = page.querySelector('#lille-grid');
-    const list = filter === 'Tous' ? D.lieuxLille : D.lieuxLille.filter(l => l.categorie === filter);
-    grid.innerHTML = list.length ? list.map(l => `
-      <div class="card place-card" data-place="${l.id}">
-        ${l.topPersonnel ? `<span class="badge-top">🏆 Top ${l.topPersonnel}</span>` : ''}
-        <div class="card-cover">${l.image ? `<img src="${l.image}" alt="">` : '📍'}</div>
-        <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;">
-          <h3>${escapeHtml(l.nom)}</h3>
-          <button class="fav-btn ${Store.has(favKey, l.id) ? 'active' : ''}" data-fav="${l.id}" aria-label="Favori">★</button>
-        </div>
-        <span class="place-category">${escapeHtml(l.categorie)}</span>
-        <p>${escapeHtml(l.description)}</p>
-        ${l.note ? `<div class="place-meta"><span>⭐ ${l.note}/5</span></div>` : ''}
-        <div class="place-actions">
-          <a class="btn btn-ghost btn-sm" href="${l.carteLien}" target="_blank" rel="noopener">📍 Maps</a>
-          ${l.lienArticle ? `<a class="btn btn-ghost btn-sm" href="${l.lienArticle}" target="_blank" rel="noopener">📖 En savoir plus</a>` : ''}
-          <button class="btn btn-ghost btn-sm" data-locate="${l.id}">🗺️ Sur la carte</button>
-        </div>
-      </div>`).join('') : emptyState('🗺️', "Pas encore de lieu, ajoute-les dans js/data.js, section « lieuxLille ».");
-
-    grid.querySelectorAll('[data-fav]').forEach(btn => btn.addEventListener('click', () => {
-      Store.toggleInSet(favKey, btn.dataset.fav);
-      btn.classList.toggle('active');
-    }));
-    grid.querySelectorAll('[data-locate]').forEach(btn => btn.addEventListener('click', () => {
-      focusMarker(btn.dataset.locate);
-      page.querySelector('#lille-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }));
-  }
-  paint();
-  page.querySelector('#lille-filter').addEventListener('click', e => {
-    const btn = e.target.closest('.chip'); if (!btn) return;
-    $$('.chip', page.querySelector('#lille-filter')).forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    paint(btn.dataset.cat);
-  });
-
-  // --- Carte interactive (Leaflet + OpenStreetMap, gratuite, sans clé) ---
-  // On attend que la page soit réellement insérée dans le DOM avant de
-  // créer la carte : Leaflet a besoin de connaître la taille réelle du
-  // conteneur, ce qui n'est pas encore le cas juste après render().
-  let focusMarker = () => {};
-  setTimeout(() => {
-    focusMarker = mountLilleMap(page.querySelector('#lille-map'), page.querySelector('#map-status'));
-  }, 0);
-
-  return page;
-}
-
-/* Construit la carte interactive de "Notre Lille" : place un repère pour
-   chaque lieu de D.lieuxLille en le géocodant via l'API gratuite Nominatim
-   (OpenStreetMap). Les résultats sont mis en cache dans le navigateur pour
-   que les visites suivantes soient instantanées. Renvoie une fonction
-   focusMarker(id) utilisée par les boutons "📍 Sur la carte". */
-function mountLilleMap(container, statusEl) {
-  const LILLE_CENTER = [50.6292, 3.0573];
-  const map = L.map(container, { scrollWheelZoom: false }).setView(LILLE_CENTER, 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap',
-    maxZoom: 19,
-  }).addTo(map);
-
-  const markers = {};
-
-  async function geocode(query) {
-    const cacheKey = `geocode:${query}`;
-    const cached = Store.get(cacheKey, null);
-    if (cached) return { point: cached, fromCache: true };
-    try {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`;
-      const res = await fetch(url, { headers: { 'Accept-Language': 'fr' } });
-      const data = await res.json();
-      if (!data.length) return { point: null, fromCache: false };
-      const point = { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
-      Store.set(cacheKey, point);
-      return { point, fromCache: false };
-    } catch { return { point: null, fromCache: false }; }
-  }
-
-  (async () => {
-    const places = D.lieuxLille;
-    let placed = 0;
-    for (const l of places) {
-      const { point, fromCache } = await geocode(`${l.nom}, ${l.adresse || 'Lille, France'}`);
-      if (point) {
-        const marker = L.marker([point.lat, point.lon]).addTo(map);
-        marker.bindPopup(`<b>${escapeHtml(l.nom)}</b><br>${escapeHtml(l.categorie)}${l.topPersonnel ? ` · 🏆 Top ${l.topPersonnel}` : ''}<br><a href="${l.carteLien}" target="_blank" rel="noopener">Ouvrir dans Maps</a>`);
-        markers[l.id] = marker;
-        placed++;
-      }
-      statusEl.textContent = `Placement des lieux sur la carte… (${placed}/${places.length})`;
-      // Respecte la limite d'1 requête/seconde de l'API gratuite Nominatim
-      // (inutile d'attendre si le résultat venait déjà du cache local)
-      if (!fromCache) await new Promise(r => setTimeout(r, 1100));
-    }
-    statusEl.textContent = placed
-      ? `${placed} lieu${placed > 1 ? 'x' : ''} sur la carte, clique un repère pour plus d'infos.`
-      : `La carte n'a pas pu localiser les lieux pour l'instant.`;
-    if (placed) {
-      const group = L.featureGroup(Object.values(markers));
-      map.fitBounds(group.getBounds().pad(0.2));
-    }
-  })();
-
-  return function focusMarker(id) {
-    const marker = markers[id];
-    if (!marker) return;
-    map.setView(marker.getLatLng(), 15, { animate: true });
-    marker.openPopup();
-  };
-}
-
-/* --- Ma tenue de sport (formulaire rempli par elle, envoyé par email) -------*/
-function renderTenueSport() {
-  const conf = D.tenueSport;
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Un petit service</span><h1>Ma tenue de sport</h1>
-      <p>${escapeHtml(conf.intro)}</p>
-    </div>
-
-    ${conf.inspiration.length ? `
-    <div class="section" style="max-width:640px;margin:0 auto var(--space-5);">
-      <div class="section-title"><h2 style="font-size:1.05rem;">Pour t'inspirer</h2></div>
-      <div>${conf.inspiration.map(i => `<a class="inspiration-chip" href="${i.lien}" target="_blank" rel="noopener">👕 ${escapeHtml(i.nom)}</a>`).join('')}</div>
-    </div>` : ''}
-
-    <div class="card" style="max-width:720px;margin:0 auto;">
-      <div id="tenue-rows"></div>
-      <button class="btn btn-ghost btn-sm" id="tenue-add">+ Ajouter un article</button>
-      <div class="form-actions">
-        <button class="btn btn-primary" id="tenue-send">Envoyer par email 💌</button>
-        <button class="btn btn-ghost" id="tenue-copy">Copier le texte</button>
-      </div>
-      <p class="form-note" id="tenue-feedback"></p>
-    </div>
-  </div>`);
-
-  const rowsEl = page.querySelector('#tenue-rows');
-  const draftKey = 'tenue-sport-draft';
-
-  function rowTemplate(data = {}) {
-    return `<div class="form-row">
-      <input type="text" placeholder="Article (ex : legging noir)" data-field="nom" value="${escapeHtml(data.nom || '')}">
-      <input type="url" placeholder="Lien du produit" data-field="lien" value="${escapeHtml(data.lien || '')}">
-      <input type="text" placeholder="Taille" data-field="taille" value="${escapeHtml(data.taille || '')}">
-      <input type="text" placeholder="Notes" data-field="notes" value="${escapeHtml(data.notes || '')}">
-      <button class="form-remove" type="button" aria-label="Supprimer cette ligne">✕</button>
-    </div>`;
-  }
-
-  function saveDraft() {
-    const rows = $$('.form-row', rowsEl).map(row => ({
-      nom: row.querySelector('[data-field="nom"]').value,
-      lien: row.querySelector('[data-field="lien"]').value,
-      taille: row.querySelector('[data-field="taille"]').value,
-      notes: row.querySelector('[data-field="notes"]').value,
-    }));
-    Store.set(draftKey, rows);
-  }
-
-  function addRow(data) {
-    rowsEl.insertAdjacentHTML('beforeend', rowTemplate(data));
-  }
-
-  const saved = Store.get(draftKey, []);
-  (saved.length ? saved : [{}, {}]).forEach(addRow);
-
-  rowsEl.addEventListener('click', e => {
-    const btn = e.target.closest('.form-remove'); if (!btn) return;
-    if ($$('.form-row', rowsEl).length > 1) btn.closest('.form-row').remove();
-    saveDraft();
-  });
-  rowsEl.addEventListener('input', saveDraft);
-
-  page.querySelector('#tenue-add').addEventListener('click', () => addRow());
-
-  function buildMessage() {
-    const rows = $$('.form-row', rowsEl)
-      .map(row => ({
-        nom: row.querySelector('[data-field="nom"]').value.trim(),
-        lien: row.querySelector('[data-field="lien"]').value.trim(),
-        taille: row.querySelector('[data-field="taille"]').value.trim(),
-        notes: row.querySelector('[data-field="notes"]').value.trim(),
-      }))
-      .filter(r => r.nom || r.lien);
-    if (!rows.length) return null;
-    return rows.map((r, i) =>
-      `${i + 1}. ${r.nom || 'Article'}${r.lien ? `, ${r.lien}` : ''}${r.taille ? ` (taille : ${r.taille})` : ''}${r.notes ? `, ${r.notes}` : ''}`
-    ).join('\n');
-  }
-
-  page.querySelector('#tenue-send').addEventListener('click', () => {
-    const message = buildMessage();
-    const feedback = page.querySelector('#tenue-feedback');
-    if (!message) { feedback.textContent = "Ajoute au moins un article (un nom ou un lien) avant d'envoyer."; return; }
-    const subject = encodeURIComponent('Ma tenue de sport 🏋️');
-    const body = encodeURIComponent(`Voici ce que j'ai choisi pour toi :\n\n${message}\n`);
-    window.location.href = `mailto:${D.reglages.emailContact}?subject=${subject}&body=${body}`;
-    feedback.textContent = "Ton application mail va s'ouvrir avec tout prérempli, il ne reste qu'à envoyer.";
-  });
-
-  page.querySelector('#tenue-copy').addEventListener('click', async () => {
-    const message = buildMessage();
-    const feedback = page.querySelector('#tenue-feedback');
-    if (!message) { feedback.textContent = "Ajoute au moins un article avant de copier."; return; }
-    try {
-      await navigator.clipboard.writeText(message);
-      feedback.textContent = "Copié ! Tu peux le coller où tu veux (SMS, WhatsApp…).";
-    } catch {
-      feedback.textContent = "Impossible de copier automatiquement, sélectionne le texte manuellement.";
-    }
-  });
-
-  return page;
-}
-
-/* --- Films / séries ----------------------------------------------------------*/
-function renderYoutube() {
-  const page = el(`<div class="page">
-    <div class="page-header">
-      <span class="eyebrow">Nos vidéos</span>
-      <h1><span class="youtube-badge" aria-hidden="true">▶</span> YouTube</h1>
-      <p>Clique une miniature, ça s'ouvre directement.</p>
-    </div>
-    <div class="grid" id="youtube-grid"></div>
-  </div>`);
-  const grid = page.querySelector('#youtube-grid');
-  const videos = D.youtube || [];
-  grid.innerHTML = videos.length ? videos.map((v, i) => `
-    <button class="card card-link youtube-card" style="text-align:left;width:100%;border:none;" data-i="${i}">
-      <div class="card-cover youtube-thumb">
-        <img src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy">
-        <span class="youtube-play" aria-hidden="true">▶</span>
-      </div>
-    </button>`).join('') : emptyState('▶️', "Pas encore de vidéo, ajoute des liens YouTube dans js/data.js, section « youtube ».");
-
-  grid.addEventListener('click', e => {
-    const btn = e.target.closest('[data-i]'); if (!btn) return;
-    const v = videos[btn.dataset.i];
-    openModal({
-      glyph: '▶️',
-      bodyHtml: `<iframe class="embed-frame" src="https://www.youtube.com/embed/${v.id}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`,
-    });
-  });
-  return page;
-}
-
-/* --- Le mot du jour -------------------------------------------------------------*/
-function renderMotDuJour() {
-  const m = D.motDuJour;
-  return el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">${formatDateLong(m.date)}</span><h1>Le mot du jour</h1></div>
-    <div class="quote-block" style="max-width:560px;margin:0 auto;">
-      <div style="font-family:var(--font-display);font-size:2.4rem;color:var(--gold);margin-bottom:8px;">${escapeHtml(m.mot)}</div>
-      <p style="font-style:normal;">${escapeHtml(m.texte)}</p>
-    </div>
-  </div>`);
-}
 
 /* ======================================================================
-   PUISSANCE 4 EN LIGNE, jeu en temps réel via Firebase Realtime
-   Database. Grille stockée à plat : 42 cases (6 lignes × 7 colonnes),
-   index = ligne*7 + colonne, ligne 0 = tout en bas du plateau.
+   6. ANIMATIONS
    ====================================================================== */
-const C4_ROWS = 6, C4_COLS = 7;
-
-function c4EmptyGrid() { return Array(C4_ROWS * C4_COLS).fill(null); }
-
-function c4CheckWinner(grille) {
-  const at = (r, c) => (r < 0 || r >= C4_ROWS || c < 0 || c >= C4_COLS) ? null : grille[r * C4_COLS + c];
-  const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
-  for (let r = 0; r < C4_ROWS; r++) {
-    for (let c = 0; c < C4_COLS; c++) {
-      const color = at(r, c);
-      if (!color) continue;
-      for (const [dr, dc] of dirs) {
-        let count = 1;
-        for (let k = 1; k < 4; k++) { if (at(r + dr * k, c + dc * k) === color) count++; else break; }
-        if (count >= 4) return color;
-      }
-    }
-  }
-  return grille.every(cell => cell) ? 'nul' : null;
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
-function renderPuissance4() {
-  const fbConf = D.firebase;
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Pour jouer, tous les deux</span><h1>Puissance 4</h1></div>
-    <div id="c4-root" style="max-width:420px;margin:0 auto;text-align:center;"></div>
-  </div>`);
-  const root = page.querySelector('#c4-root');
-
-  if (!fbConf.apiKey) {
-    root.innerHTML = emptyState('🔴', "Il manque une dernière étape de configuration (gratuite, ~10 min) pour activer le jeu en temps réel, regarde la section « Puissance 4 en ligne » du README.");
-    return page;
-  }
-
-  // Initialise Firebase une seule fois, même si on revient plusieurs fois sur cette page
-  if (!window._fbApp) {
-    window._fbApp = firebase.initializeApp(fbConf);
-  }
-  const db = firebase.database();
-  const cle = D.puissance4Cle || 'notre-puissance4';
-  const partieRef = db.ref(`${cle}/partie`);
-
-  // Identifiant propre à cet appareil (mémorisé), pour savoir "qui est qui"
-  let deviceId = Store.get('c4-device-id', null);
-  if (!deviceId) { deviceId = 'd-' + Math.random().toString(36).slice(2, 12); Store.set('c4-device-id', deviceId); }
-
-  root.innerHTML = `
-    <p id="c4-status" style="color:var(--ink-soft);margin-bottom:14px;">Connexion à la partie…</p>
-    <div class="c4-board" id="c4-board"></div>
-    <div class="form-actions" style="justify-content:center;margin-top:18px;">
-      <button class="btn btn-ghost btn-sm" id="c4-reset">🔄 Nouvelle partie</button>
-    </div>
-  `;
-  const statusEl = root.querySelector('#c4-status');
-  const boardEl = root.querySelector('#c4-board');
-
-  // Prépare les 42 cases une fois (on ne fait que changer leur couleur ensuite,
-  // ce qui permet une petite animation fluide à chaque coup)
-  for (let r = C4_ROWS - 1; r >= 0; r--) {
-    for (let c = 0; c < C4_COLS; c++) {
-      boardEl.insertAdjacentHTML('beforeend', `<button class="c4-cell" data-row="${r}" data-col="${c}" aria-label="Colonne ${c + 1}"></button>`);
-    }
-  }
-
-  let monRole = null;
-  let previousGrid = c4EmptyGrid();
-
-  function paint(partie) {
-    if (!partie) return;
-    // Anime uniquement les cases qui viennent de changer
-    partie.grille.forEach((val, i) => {
-      const row = Math.floor(i / C4_COLS), col = i % C4_COLS;
-      const cell = boardEl.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-      if (!cell) return;
-      cell.classList.remove('rouge', 'jaune');
-      if (val) cell.classList.add(val);
-      if (val && !previousGrid[i]) cell.classList.add('c4-pop');
-      else cell.classList.remove('c4-pop');
-    });
-    previousGrid = partie.grille;
-
-    if (!monRole) {
-      statusEl.textContent = "Tu regardes la partie en spectateur.";
-    } else if (partie.gagnant === 'nul') {
-      statusEl.textContent = "Match nul, plateau plein ! 🤝";
-    } else if (partie.gagnant) {
-      const gagnantEstMoi = partie.gagnant === monRole;
-      statusEl.textContent = gagnantEstMoi ? "Tu as gagné ! 🎉" : "Ton adversaire a gagné cette manche 😅";
-    } else if (partie.tour === monRole) {
-      statusEl.textContent = `À toi de jouer (${monRole === 'rouge' ? '🔴' : '🟡'})`;
-    } else {
-      statusEl.textContent = "Au tour de l'autre…";
-    }
-  }
-
-  // Rejoint la partie (et la crée si besoin) en une seule opération, pour
-  // éviter que deux connexions simultanées ne se marchent sur les pieds.
-  function joinGame() {
-    partieRef.transaction(partie => {
-      partie = partie || { grille: c4EmptyGrid(), tour: 'rouge', gagnant: null, joueurs: { rouge: null, jaune: null } };
-      partie.joueurs = partie.joueurs || { rouge: null, jaune: null };
-      if (partie.joueurs.rouge === deviceId || partie.joueurs.jaune === deviceId) return partie;
-      if (!partie.joueurs.rouge) { partie.joueurs.rouge = deviceId; return partie; }
-      if (!partie.joueurs.jaune) { partie.joueurs.jaune = deviceId; return partie; }
-      return partie; // déjà 2 joueurs pris : on n'y touche pas, on sera spectateur
-    }, (err, committed, snap) => {
-      const partie = snap ? snap.val() : null;
-      const joueurs = partie?.joueurs;
-      if (joueurs?.rouge === deviceId) monRole = 'rouge';
-      else if (joueurs?.jaune === deviceId) monRole = 'jaune';
-      else monRole = null;
-      // Reforce un affichage à jour : le tout premier passage de .on('value')
-      // peut arriver avant que monRole ne soit connu.
-      if (partie) paint(partie);
-    });
-  }
-  joinGame();
-
-  partieRef.on('value', snap => paint(snap.val()));
-  page._cleanup = () => partieRef.off('value');
-
-  boardEl.addEventListener('click', e => {
-    const cell = e.target.closest('[data-col]'); if (!cell || !monRole) return;
-    const col = parseInt(cell.dataset.col, 10);
-    partieRef.transaction(partie => {
-      if (!partie || partie.gagnant || partie.tour !== monRole) return partie;
-      const grille = partie.grille.slice();
-      let placed = false;
-      for (let row = 0; row < C4_ROWS; row++) {
-        const idx = row * C4_COLS + col;
-        if (!grille[idx]) { grille[idx] = monRole; placed = true; break; }
-      }
-      if (!placed) return partie; // colonne pleine
-      partie.grille = grille;
-      const winner = c4CheckWinner(grille);
-      if (winner) partie.gagnant = winner;
-      else partie.tour = monRole === 'rouge' ? 'jaune' : 'rouge';
-      return partie;
-    });
-  });
-
-  root.querySelector('#c4-reset').addEventListener('click', () => {
-    partieRef.transaction(partie => {
-      partie = partie || {};
-      partie.grille = c4EmptyGrid();
-      partie.tour = 'rouge';
-      partie.gagnant = null;
-      return partie;
-    });
-  });
-
-  return page;
+@keyframes breathe {
+  0%, 100% { transform: scale(1);   opacity: .7; }
+  50%      { transform: scale(1.12); opacity: 1; }
 }
-
-/* --- Les petites surprises (enveloppes) ----------------------------------------*/
-function renderSurprises() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Chut, c'est une surprise</span><h1>Les petites surprises</h1></div>
-    <div class="grid" id="surprises-grid"></div>
-  </div>`);
-  const openedKey = 'surprises-ouvertes';
-  const grid = page.querySelector('#surprises-grid');
-  grid.innerHTML = D.surprises.length ? D.surprises.map(s => `
-    <div class="card envelope ${Store.has(openedKey, s.id) ? 'opened' : ''}" data-id="${s.id}">
-      <span class="flap">${s.icone || '✉️'}</span>
-      <h3>${escapeHtml(s.titre)}</h3>
-      <p style="font-size:.85rem;">${Store.has(openedKey, s.id) ? 'Déjà ouverte, clique pour revoir' : 'Clique pour ouvrir'}</p>
-    </div>`).join('') : emptyState('🎁', "Pas encore de surprise, ajoute-en dans js/data.js, section « surprises ».");
-
-  grid.addEventListener('click', e => {
-    const card = e.target.closest('.envelope'); if (!card) return;
-    const s = D.surprises.find(x => x.id === card.dataset.id);
-    Store.toggleInSet(openedKey, s.id);
-    card.classList.add('opened');
-    card.querySelector('p').textContent = 'Déjà ouverte, clique pour revoir';
-    openModal({ glyph: s.icone || '🎁', bodyHtml: `<h3 style="margin-bottom:12px;">${escapeHtml(s.titre)}</h3>${s.contenu.map(renderBlock).join('')}` });
-  });
-  return page;
+@keyframes floatUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+.fade-rise { animation: floatUp var(--dur-slow) var(--ease-soft); }
 
-/* --- État vide réutilisable -------------------------------------------------------*/
-function emptyState(icon, text) {
-  return `<div class="card" style="text-align:center;grid-column:1/-1;color:var(--ink-soft);">
-    <div style="font-size:2rem;margin-bottom:8px;">${icon}</div><p>${text}</p>
-  </div>`;
-}
-
-/* Certaines routes ont des sous-pages (détail). On les branche ici. */
-const originalOuvrirQuand = renderOuvrirQuandListe;
-ROUTES.find(r => r.path === 'ouvrir-quand').render = (sub) => sub ? renderOuvrirQuandDetail(sub) : originalOuvrirQuand();
 
 /* ======================================================================
-   6. EFFET D'ÉTOILES (discret, désactivable dans data.js)
+   7. RESPONSIVE / iPHONE
    ====================================================================== */
-function startAmbientStars() {
-  if (!D.reglages.effetEtoiles) return;
-  const canvas = document.getElementById('ambient-canvas');
-  const ctx = canvas.getContext('2d');
-  let stars = [];
-  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
-  function seed() {
-    stars = Array.from({ length: 40 }, () => ({
-      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
-      r: Math.random() * 1.4 + .3, phase: Math.random() * Math.PI * 2, speed: .01 + Math.random() * .015,
-    }));
-  }
-  resize(); seed();
-  addEventListener('resize', () => { resize(); seed(); });
-  const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
-  function loop(t) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = isDark() ? 'rgba(243,231,225,0.9)' : 'rgba(199,165,103,0.55)';
-    stars.forEach(s => {
-      const a = (Math.sin(t * s.speed + s.phase) + 1) / 2;
-      ctx.globalAlpha = a * 0.6;
-      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.fill();
-    });
-    requestAnimationFrame(loop);
-  }
-  requestAnimationFrame(loop);
+@media (max-width: 640px) {
+  .page { padding: var(--space-5) var(--space-3) var(--space-6); }
+  .photo-grid, .moodboard { columns: 2 160px; }
+  .counter-unit { min-width: 76px; padding: var(--space-3) var(--space-2); }
+  .counter-unit .num { font-size: 1.6rem; }
+  .letter-reader { padding: var(--space-4); }
 }
+
+/* Zone de sécurité iPhone (notch / home indicator) */
+.site-header { padding-top: env(safe-area-inset-top); height: calc(var(--header-h) + env(safe-area-inset-top)); }
+main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
+.floating-btn { bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); }
+
 
 /* ======================================================================
-   7. DÉMARRAGE
+   9. ACCESSIBILITÉ
    ====================================================================== */
-function buildNav() {
-  $('#nav-list').innerHTML = ROUTES.map(r =>
-    `<a href="#/${r.path}" data-path="${r.path}"><span class="emoji">${r.emoji}</span> ${escapeHtml(r.label)}</a>`
-  ).join('');
+:focus-visible {
+  outline: 2px solid var(--bordeaux);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
-function init() {
-  // Thème sauvegardé (ou préférence système)
-  const savedTheme = Store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  applyTheme(savedTheme);
-
-  buildNav();
-
-  $('#nav-toggle').addEventListener('click', toggleDrawer);
-  $('#nav-scrim').addEventListener('click', closeDrawer);
-  $('#theme-toggle').addEventListener('click', toggleTheme);
-  $('#modal-scrim').addEventListener('click', e => { if (e.target.id === 'modal-scrim') closeModal(); });
-  $('#modal-close').addEventListener('click', closeModal);
-  $('#lightbox').addEventListener('click', closeLightbox);
-
-  // Recherche globale
-  $('#search-toggle').addEventListener('click', () => {
-    $('#search-overlay').classList.add('open');
-    $('#search-input').value = '';
-    runSearch('');
-    $('#search-input').focus();
-  });
-  $('#search-overlay').addEventListener('click', e => { if (e.target.id === 'search-overlay') $('#search-overlay').classList.remove('open'); });
-  $('#search-input').addEventListener('input', e => runSearch(e.target.value));
-
-  // Bouton flottant "Je pense à toi"
-  $('#floating-think').addEventListener('click', () => {
-    openModal({ glyph: '💭', bodyHtml: `<p class="modal-text">${escapeHtml(pick(D.phrasesCalin))}</p>` });
-  });
-
-  // Échap ferme tout
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    closeModal(); closeLightbox(); closeDrawer();
-    $('#search-overlay').classList.remove('open');
-  });
-
-  startAmbientStars();
-
-  window.addEventListener('hashchange', renderRoute);
-  renderRoute();
-
-  // PWA : enregistrement du service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0; padding: 0; margin: -1px;
+}
+
+/* --- Carrousel de photos (accueil) --------------------------------------- */
+.carousel-wrap { position: relative; max-width: 720px; margin: var(--space-5) auto 0; display: flex; align-items: center; gap: 6px; }
+.carousel-track {
+  display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory;
+  scroll-behavior: smooth; -webkit-overflow-scrolling: touch;
+  padding: 4px 6px; scrollbar-width: none; flex: 1;
+}
+.carousel-track::-webkit-scrollbar { display: none; }
+.carousel-slide {
+  scroll-snap-align: center; flex: 0 0 auto; width: min(420px, 66vw); aspect-ratio: 3/4;
+  border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-lg);
+  border: 6px solid var(--surface); position: relative;
+}
+.carousel-heart {
+  position: absolute; top: 14px; right: 14px; width: 34px; height: 34px;
+  border-radius: 50%; background: rgba(255,255,255,.9); color: var(--bordeaux);
+  display: grid; place-items: center; font-size: 1rem; box-shadow: var(--shadow-sm);
+  opacity: 0; transform: scale(.5); transition: all var(--dur-med) var(--ease-soft);
+}
+.carousel-slide.is-active .carousel-heart { opacity: 1; transform: scale(1); }
+.carousel-slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.carousel-arrow {
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--border-soft);
+  background: var(--surface); color: var(--bordeaux); font-size: 1.4rem; line-height: 1;
+  display: grid; place-items: center; flex-shrink: 0; box-shadow: var(--shadow-sm);
+}
+.carousel-dots { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+.carousel-dot { width: 7px; height: 7px; border-radius: 50%; border: none; background: var(--blush); transition: all var(--dur-fast) var(--ease-soft); padding: 0; }
+.carousel-dot.active { background: var(--bordeaux); width: 20px; border-radius: 4px; }
+@media (max-width: 480px) {
+  .carousel-arrow { width: 34px; height: 34px; font-size: 1.2rem; }
+}
+
+/* --- Page YouTube ---------------------------------------------------------- */
+.youtube-badge {
+  display: inline-grid; place-items: center; width: 34px; height: 24px;
+  background: #FF0000; color: #fff; border-radius: 7px; font-size: 0.75rem;
+  vertical-align: middle; margin-right: 6px;
+}
+.youtube-thumb { position: relative; aspect-ratio: 16/9; }
+.youtube-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius-sm); }
+.youtube-play {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(255,0,0,.88); color: #fff; display: grid; place-items: center;
+  font-size: 1.2rem; box-shadow: var(--shadow-md);
+  transition: transform var(--dur-fast) var(--ease-soft);
+}
+.youtube-card:hover .youtube-play { transform: translate(-50%, -50%) scale(1.08); }
+
+/* --- Badge de catégorie (Notre Lille) -------------------------------------- */
+.place-category {
+  display: inline-block; font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--bordeaux); background: var(--blush-soft);
+  padding: 3px 10px; border-radius: var(--radius-pill); margin: 4px 0 8px;
+}
+
+/* --- Panneau du jour (accueil, toujours visible) --------------------------- */
+.daily-panel { text-align: center; }
+.daily-panel-title { font-weight: 600; margin-bottom: 10px; }
+.daily-panel-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.daily-btn {
+  flex: 1; min-width: 130px; padding: 10px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft); background: var(--surface-alt); color: var(--ink);
+  font-size: 0.88rem; font-weight: 600; display: flex; align-items: center; justify-content: space-between;
+  transition: transform var(--dur-fast) var(--ease-soft), background var(--dur-fast) var(--ease-soft);
+}
+.daily-btn:hover { transform: translateY(-2px); background: var(--blush-soft); }
+.daily-btn:active { transform: translateY(0) scale(.97); }
+.daily-count {
+  background: var(--bordeaux); color: var(--cream); border-radius: var(--radius-pill);
+  padding: 2px 9px; font-size: 0.82rem; min-width: 22px; text-align: center;
+}
