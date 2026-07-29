@@ -662,6 +662,19 @@ const SITE_DATA = {
     // Devine ma réponse : une personne répond en secret, l'autre devine
     // Bataille de compliments : 5 catégories, tour par tour
     bataille: ["Physique", "Personnalité", "Souvenir", "Fierté", "Futur"],
+    // Lequel de nous deux : une affirmation, chacun vote pour Ethan ou Lorvencia
+    lequelDeNousDeux: [
+      "Qui met le plus de temps à choisir un film ?",
+      "Qui envoie le plus de messages ?",
+      "Qui s'endort le plus vite ?",
+      "Qui organise le mieux les sorties ?",
+      "Qui est le plus susceptible de faire une surprise ?",
+      "Qui a le plus de photos de l'autre ?",
+      "Qui rit le plus fort ?",
+      "Qui voudrait adopter un animal en premier ?",
+      "Qui est le plus gourmand ?",
+      "Qui oublie le plus facilement l'heure ?",
+    ],
     devineReponse: [
       "Quel dessert choisirais-je maintenant ?",
       "Quelle couleur porterais-je pour un rendez-vous ?",
