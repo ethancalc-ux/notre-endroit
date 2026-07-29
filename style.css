@@ -1100,3 +1100,33 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
   .scroll-blob { transform: none !important; }
   #scroll-bg::after { opacity: .15; }
 }
+
+/* --- Icônes d'en-tête de page + animations signature par widget ------------ */
+.page-header-icon { display: block; width: 56px; height: 56px; margin: 0 auto 10px; }
+.page-header-icon svg { width: 100%; height: 100%; }
+.icon-pulse { animation: iconPulse 2.6s ease-in-out infinite; }
+.icon-sparkle { animation: iconSparkle 3s ease-in-out infinite; }
+@keyframes iconPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+@keyframes iconSparkle { 0%, 100% { transform: rotate(-4deg) scale(1); } 50% { transform: rotate(4deg) scale(1.06); } }
+@media (prefers-reduced-motion: reduce) {
+  .icon-pulse, .icon-sparkle { animation: none; }
+}
+
+/* Petits badges d'icône réutilisés dans les cartes (vlog play, lille pin) */
+.mini-play-badge, .mini-pin-badge {
+  font-size: 1.6rem; color: var(--bordeaux); display: inline-flex;
+  align-items: center; justify-content: center; width: 44px; height: 44px;
+}
+.mini-pin-badge svg { width: 100%; height: 100%; }
+
+/* --- Cadeau (Petites surprises) : couvercle qui s'ouvre --------------------- */
+.gift-box { cursor: pointer; }
+.gift-icon { display: inline-block; transition: transform var(--dur-med) var(--ease-soft); }
+.gift-box:hover .gift-icon { transform: translateY(-4px) rotate(-6deg); }
+.gift-box.opening .gift-icon { animation: giftOpen 0.42s ease-out forwards; }
+@keyframes giftOpen {
+  0% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-14px) rotate(-14deg) scale(1.1); }
+  100% { transform: translateY(-4px) rotate(-6deg) scale(1.05); }
+}
+.gift-box.opened { opacity: .65; }
