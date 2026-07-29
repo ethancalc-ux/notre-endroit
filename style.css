@@ -1130,3 +1130,11 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
   100% { transform: translateY(-4px) rotate(-6deg) scale(1.05); }
 }
 .gift-box.opened { opacity: .65; }
+
+/* --- Petit cœur textile pastel (scène "Depuis notre dernier câlin") -------- */
+.duo-card { position: relative; overflow: hidden; }
+.calin-heart-textile {
+  position: absolute; bottom: -6px; right: -6px; font-size: 3.2rem;
+  color: var(--blush); opacity: .55; transform: rotate(-8deg);
+  pointer-events: none;
+}
