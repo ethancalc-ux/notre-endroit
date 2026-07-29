@@ -657,6 +657,19 @@ const SITE_DATA = {
       "✈️ Choisir une destination", "🎙️ Envoyer un vocal", "🎁 Faire une surprise",
     ],
     // Notre compatibilité du jour : 5 petites questions, résultat pour rire
+    // Tu préfères, version couple : des paires de choix
+    tuPreferes: [
+      { a: "🎬 Soirée film", b: "🚗 Sortie improvisée" },
+      { a: "🇬🇧 Voyage à Londres", b: "🌊 Week-end à la mer" },
+      { a: "🥐 Petit-déjeuner au lit", b: "🕯️ Dîner romantique" },
+      { a: "📸 Photos souvenirs", b: "🎥 Vidéos souvenirs" },
+      { a: "🎁 Cadeau surprise", b: "💌 Lettre écrite" },
+      { a: "📞 Appel toute la nuit", b: "🤍 Journée entière ensemble" },
+      { a: "🏙️ Appartement en ville", b: "🌳 Maison au calme" },
+      { a: "👩‍🍳 Cuisiner ensemble", b: "🥡 Commander notre plat préféré" },
+      { a: "🔁 Revoir notre rencontre", b: "🔑 Découvrir notre futur logement" },
+      { a: "🎧 Playlist douce", b: "💃 Playlist pour danser" },
+    ],
     compatibilite: [
       { question: "Ton humeur là, maintenant ?", options: ["😌 Calme", "🤩 Excité·e", "😴 Fatigué·e", "🥰 Amoureux·se"] },
       { question: "Plutôt sortir ou rester ?", options: ["🏠 Rester", "🚶 Sortir"] },
