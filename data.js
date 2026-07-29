@@ -658,6 +658,19 @@ const SITE_DATA = {
     ],
     // Notre compatibilité du jour : 5 petites questions, résultat pour rire
     // Tu préfères, version couple : des paires de choix
+    // Qui connaît le mieux l'autre : questions ouvertes, 5 tirées au sort
+    quiConnait: [
+      "Quelle est sa boisson préférée ?",
+      "Quel est son plat réconfortant ?",
+      "Quelle destination choisirait-il/elle pour un week-end ?",
+      "Quel film pourrait-il/elle revoir plusieurs fois ?",
+      "Qu'est-ce qui le/la met rapidement de bonne humeur ?",
+      "Quel cadeau lui ferait le plus plaisir ?",
+      "Quelle activité préfère-t-il/elle faire à deux ?",
+      "À quelle heure aime-t-il/elle généralement se coucher ?",
+      "Quel est son plus grand rêve du moment ?",
+      "Quel détail remarque-t-il/elle toujours chez les autres ?",
+    ],
     tuPreferes: [
       { a: "🎬 Soirée film", b: "🚗 Sortie improvisée" },
       { a: "🇬🇧 Voyage à Londres", b: "🌊 Week-end à la mer" },
