@@ -201,11 +201,22 @@ function toggleTheme() {
 
 /* --- Météo (Open-Meteo, gratuit, sans clé) --------------------------- */
 const WEATHER_CODES = {
-  0: ['☀️', 'ciel dégagé'], 1: ['🌤️', 'plutôt clair'], 2: ['⛅', 'partiellement nuageux'],
-  3: ['☁️', 'couvert'], 45: ['🌫️', 'brumeux'], 48: ['🌫️', 'brumeux'],
-  51: ['🌦️', 'bruine légère'], 61: ['🌧️', 'pluie légère'], 63: ['🌧️', 'pluie'],
-  65: ['🌧️', 'forte pluie'], 71: ['🌨️', 'neige légère'], 73: ['🌨️', 'neige'],
-  75: ['❄️', 'forte neige'], 80: ['🌦️', 'averses'], 95: ['⛈️', 'orage'],
+  0: ['soleil', 'ciel dégagé'], 1: ['soleil-voile', 'plutôt clair'], 2: ['nuage-soleil', 'partiellement nuageux'],
+  3: ['nuage', 'couvert'], 45: ['brume', 'brumeux'], 48: ['brume', 'brumeux'],
+  51: ['bruine', 'bruine légère'], 61: ['pluie', 'pluie légère'], 63: ['pluie', 'pluie'],
+  65: ['pluie', 'forte pluie'], 71: ['neige', 'neige légère'], 73: ['neige', 'neige'],
+  75: ['neige', 'forte neige'], 80: ['bruine', 'averses'], 95: ['orage', 'orage'],
+};
+const METEO_SVG = {
+  soleil: `<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="10" fill="var(--gold)"/><g stroke="var(--gold)" stroke-width="2.5" stroke-linecap="round"><path d="M24 4v6M24 38v6M4 24h6M38 24h6M9 9l4 4M35 35l4 4M9 39l4-4M35 13l4-4"/></g></svg>`,
+  'soleil-voile': `<svg viewBox="0 0 48 48" fill="none"><circle cx="20" cy="20" r="9" fill="var(--gold)"/><path d="M10 34a9 9 0 019-9h12a7 7 0 010 14H14a4 4 0 01-4-5z" fill="var(--surface)" stroke="var(--blush)" stroke-width="1.5"/></svg>`,
+  'nuage-soleil': `<svg viewBox="0 0 48 48" fill="none"><circle cx="16" cy="16" r="7" fill="var(--gold)"/><path d="M10 36a10 10 0 0110-10h14a8 8 0 010 16H15a5 5 0 01-5-6z" fill="var(--surface)" stroke="var(--blush)" stroke-width="1.5"/></svg>`,
+  nuage: `<svg viewBox="0 0 48 48" fill="none"><path d="M8 34a10 10 0 0110-10h16a9 9 0 010 18H13a5 5 0 01-5-8z" fill="var(--surface)" stroke="var(--blush)" stroke-width="1.5"/></svg>`,
+  brume: `<svg viewBox="0 0 48 48" fill="none"><g stroke="var(--gold-soft)" stroke-width="3" stroke-linecap="round"><path d="M8 18h32M8 24h24M8 30h32M8 36h20"/></g></svg>`,
+  bruine: `<svg viewBox="0 0 48 48" fill="none"><path d="M8 26a10 10 0 0110-10h14a8 8 0 010 16H13a5 5 0 01-5-6z" fill="var(--surface)" stroke="var(--blush)" stroke-width="1.5"/><g stroke="var(--bordeaux)" stroke-width="2" stroke-linecap="round"><path d="M16 36l-2 5M24 36l-2 5M32 36l-2 5"/></g></svg>`,
+  pluie: `<svg viewBox="0 0 48 48" fill="none"><path d="M8 22a10 10 0 0110-10h14a8 8 0 010 16H13a5 5 0 01-5-6z" fill="var(--surface)" stroke="var(--blush)" stroke-width="1.5"/><g stroke="var(--bordeaux)" stroke-width="2.5" stroke-linecap="round"><path d="M14 34l-3 8M22 34l-3 8M30 34l-3 8M38 34l-3 8"/></g></svg>`,
+  neige: `<svg viewBox="0 0 48 48" fill="none"><path d="M8 20a10 10 0 0110-10h14a8 8 0 010 16H13a5 5 0 01-5-6z" fill="var(--surface)" stroke="var(--blush)" stroke-width="1.5"/><g fill="var(--gold)"><circle cx="15" cy="36" r="2"/><circle cx="24" cy="40" r="2"/><circle cx="33" cy="36" r="2"/></g></svg>`,
+  orage: `<svg viewBox="0 0 48 48" fill="none"><path d="M8 20a10 10 0 0110-10h14a8 8 0 010 16H13a5 5 0 01-5-6z" fill="var(--surface)" stroke="var(--blush)" stroke-width="1.5"/><path d="M24 26l-6 10h5l-3 8 9-12h-5z" fill="var(--gold)"/></svg>`,
 };
 async function fetchWeatherFor(ville) {
   try {
@@ -213,7 +224,7 @@ async function fetchWeatherFor(ville) {
     const res = await fetch(url);
     const data = await res.json();
     const code = data.current.weather_code;
-    const [icon, desc] = WEATHER_CODES[code] || ['🌥️', 'temps changeant'];
+    const [icon, desc] = WEATHER_CODES[code] || ['nuage', 'temps changeant'];
     return { ok: true, nom: ville.nom, icon, desc, temp: Math.round(data.current.temperature_2m) };
   } catch {
     return { ok: false, nom: ville.nom };
@@ -226,7 +237,7 @@ async function loadWeather(container) {
   const resultats = await Promise.all(villes.map(fetchWeatherFor));
   container.innerHTML = resultats.map(r => r.ok ? `
     <div class="weather-row">
-      <div class="weather-icon">${r.icon}</div>
+      <div class="weather-icon">${METEO_SVG[r.icon] || METEO_SVG.nuage}</div>
       <div>
         <div class="weather-temp">${r.temp}°C</div>
         <div style="color:var(--ink-soft);font-size:.85rem;">${r.desc} à ${r.nom}</div>
@@ -352,20 +363,16 @@ function renderAccueil() {
       <div class="widget-grid" id="widget-grid"></div>
     </div>
 
-    <div class="section card daily-panel" style="max-width:420px;margin:0 auto;">
-      <div class="daily-panel-title">🚽 Aujourd'hui</div>
-      <div class="daily-panel-row">
-        <button class="daily-btn" id="caca-lorvencia" type="button">Lorvencia <span class="daily-count" id="caca-lorvencia-n">0</span></button>
-        <button class="daily-btn" id="caca-ethan" type="button">Ethan <span class="daily-count" id="caca-ethan-n">0</span></button>
-      </div>
-      <button class="btn btn-primary btn-sm" id="btn-uber-quick" style="width:100%;margin-top:12px;">🍔 Demander un Uber Eats</button>
+    <div class="uber-card" id="btn-uber-quick" role="button" tabindex="0">
+      <span class="uber-icon"><svg viewBox="0 0 48 48" fill="none"><path d="M8 20h32l-3 14a5 5 0 01-5 4H16a5 5 0 01-5-4z" fill="var(--surface)"/><path d="M14 20a10 10 0 0120 0" stroke="var(--bordeaux)" stroke-width="3" fill="none"/><circle cx="19" cy="30" r="2" fill="var(--bordeaux)"/><circle cx="29" cy="30" r="2" fill="var(--bordeaux)"/></svg></span>
+      <span>Envie d'un Uber Eats à deux ?</span>
     </div>
 
-    <div class="section quote-block" style="max-width:520px;margin:0 auto;">
+    <div class="section speech-quote" style="max-width:520px;margin:var(--space-6) auto 0;">
       <p id="quote-of-day"></p>
     </div>
 
-    <div class="section card weather-card" style="max-width:520px;margin:0 auto;text-align:left;" id="weather-box">
+    <div class="section card weather-organic" style="max-width:520px;margin:var(--space-4) auto 0;" id="weather-box">
       <div style="color:var(--ink-soft);">Chargement de la météo…</div>
     </div>
     <p class="weather-note" style="max-width:520px;margin:0 auto;">Peu importe la météo dehors, j'espère qu'il fera toujours un peu plus beau dans ton cœur.</p>
@@ -491,36 +498,16 @@ function renderAccueil() {
       </a>`)
     .join('');
 
-  // Petit panneau du jour, toujours visible (pas besoin de cliquer) —
-  // le compteur ne se réinitialise jamais : chaque jour garde son propre
-  // total, l'historique complet reste dans le navigateur.
-  const CACA_KEY = 'compteur-toilettes-jours';
-  const todayKey = () => new Date().toISOString().slice(0, 10);
-  function bumpCaca(personne) {
-    const data = Store.get(CACA_KEY, {});
-    const jour = todayKey();
-    data[jour] = data[jour] || { lorvencia: 0, ethan: 0 };
-    data[jour][personne]++;
-    Store.set(CACA_KEY, data);
-    paintCaca();
-  }
-  function paintCaca() {
-    const data = Store.get(CACA_KEY, {});
-    const today = data[todayKey()] || { lorvencia: 0, ethan: 0 };
-    page.querySelector('#caca-lorvencia-n').textContent = today.lorvencia;
-    page.querySelector('#caca-ethan-n').textContent = today.ethan;
-  }
-  paintCaca();
-  page.querySelector('#caca-lorvencia').addEventListener('click', () => bumpCaca('lorvencia'));
-  page.querySelector('#caca-ethan').addEventListener('click', () => bumpCaca('ethan'));
-
   // Bouton rapide Uber Eats — envoie directement le message par WhatsApp,
   // sans passer par la fenêtre "Une envie".
-  page.querySelector('#btn-uber-quick').addEventListener('click', () => {
-    const preset = (D.envies || []).find(e => /uber\s*eats/i.test(e.label)) || { message: "J'ai envie d'un Uber Eats ce soir 🍔" };
+  function envoyerUberEats() {
+    const preset = (D.envies || []).find(e => /uber\s*eats/i.test(e.label)) || { message: "J'ai envie d'un Uber Eats avec toi 🍔💕" };
     const numero = (D.reglages.telephoneContact || '').replace(/[^\d+]/g, '');
     window.open(`https://wa.me/${numero}?text=${encodeURIComponent(preset.message)}`, '_blank');
-  });
+  }
+  const uberCard = page.querySelector('#btn-uber-quick');
+  uberCard.addEventListener('click', envoyerUberEats);
+  uberCard.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); envoyerUberEats(); } });
 
   return page;
 }
@@ -670,6 +657,19 @@ function openToiletCounter() {
 }
 
 /* --- À ouvrir quand… (liste) ---------------------------------------------*/
+const RESSENTI_ICONES = {
+  mal: `<svg viewBox="0 0 48 48" fill="none"><path d="M24 40S8 29 8 18c0-6 5-10 10-10 3 0 5 1.5 6 3.5C25 9.5 27 8 30 8c5 0 10 4 10 10 0 11-16 22-16 22z" fill="var(--blush)"/></svg>`,
+  pleures: `<svg viewBox="0 0 48 48" fill="none"><path d="M24 8c-6 6-11 12-11 18a11 11 0 0022 0c0-6-5-12-11-18z" fill="var(--gold-soft)"/><path d="M15 34c0 3 2 5 3 7M33 34c0 3-2 5-3 7" stroke="var(--bordeaux)" stroke-width="2" stroke-linecap="round"/></svg>`,
+  dormir: `<svg viewBox="0 0 48 48" fill="none"><path d="M30 8a16 16 0 1010 28 13 13 0 01-10-28z" fill="var(--gold-soft)"/><circle cx="14" cy="14" r="1.6" fill="var(--gold)"/><circle cx="10" cy="22" r="1.1" fill="var(--gold)"/></svg>`,
+  doutes: `<svg viewBox="0 0 48 48" fill="none"><path d="M24 6c9 0 14 6 14 12 0 7-8 8-9 15h-10c-1-7-9-8-9-15 0-6 5-12 14-12z" fill="var(--blush-soft)"/><rect x="19" y="37" width="10" height="4" rx="2" fill="var(--blush-soft)"/></svg>`,
+  peur: `<svg viewBox="0 0 48 48" fill="none"><path d="M8 20c0-7 6-12 12-12M40 20c0-7-6-12-12-12" stroke="var(--gold)" stroke-width="3" stroke-linecap="round"/><circle cx="24" cy="26" r="12" fill="var(--blush-soft)"/></svg>`,
+  'pas-assez': `<svg viewBox="0 0 48 48" fill="none"><path d="M24 6l4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z" fill="var(--gold)"/></svg>`,
+  seule: `<svg viewBox="0 0 48 48" fill="none"><circle cx="17" cy="16" r="7" fill="var(--blush)"/><circle cx="31" cy="16" r="7" fill="var(--gold-soft)"/><path d="M8 40c1-9 7-14 16-14s15 5 16 14" fill="var(--blush-soft)"/></svg>`,
+  manques: `<svg viewBox="0 0 48 48" fill="none"><rect x="7" y="12" width="34" height="24" rx="4" fill="var(--surface)" stroke="var(--blush)" stroke-width="2"/><path d="M9 14l15 12 15-12" stroke="var(--bordeaux)" stroke-width="2" fill="none"/><path d="M24 22l3 3-3 3-3-3z" fill="var(--gold)"/></svg>`,
+  sourire: `<svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="16" fill="var(--gold-soft)"/><path d="M16 26c2 5 6 8 8 8s6-3 8-8" stroke="var(--bordeaux)" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="17" cy="20" r="1.6" fill="var(--bordeaux)"/><circle cx="31" cy="20" r="1.6" fill="var(--bordeaux)"/></svg>`,
+  voix: `<svg viewBox="0 0 48 48" fill="none"><path d="M10 24a14 14 0 0128 0v8a4 4 0 01-4 4h-2V24a2 2 0 00-2-2 2 2 0 00-2 2v14a2 2 0 002 2h4M10 24v8a4 4 0 004 4h2V24a2 2 0 012-2 2 2 0 012 2" stroke="var(--bordeaux)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+};
+
 function renderOuvrirQuandListe() {
   const page = el(`<div class="page">
     <div class="page-header">
@@ -677,11 +677,11 @@ function renderOuvrirQuandListe() {
       <h1>À ouvrir quand…</h1>
       <p>Choisis ce que tu ressens maintenant. Il n'y a pas de mauvaise réponse.</p>
     </div>
-    <div class="grid" id="oq-grid"></div>
+    <div class="organic-grid" id="oq-grid"></div>
   </div>`);
-  page.querySelector('#oq-grid').innerHTML = D.ouvrirQuand.map(o => `
-    <a class="card envelope-card card-link" href="#/ouvrir-quand/${o.id}">
-      <span class="glyph">${o.icone}</span>
+  page.querySelector('#oq-grid').innerHTML = D.ouvrirQuand.map((o, i) => `
+    <a class="organic-card card-link tilt-${i % 4}" href="#/ouvrir-quand/${o.id}">
+      <span class="organic-icon">${RESSENTI_ICONES[o.id] || `<span style="font-size:1.7rem;">${o.icone}</span>`}</span>
       <h3>${escapeHtml(o.titre)}</h3>
     </a>`).join('');
   return page;
