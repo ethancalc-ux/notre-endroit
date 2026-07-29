@@ -659,6 +659,17 @@ const SITE_DATA = {
     // Notre compatibilité du jour : 5 petites questions, résultat pour rire
     // Tu préfères, version couple : des paires de choix
     // Qui connaît le mieux l'autre : questions ouvertes, 5 tirées au sort
+    // Devine ma réponse : une personne répond en secret, l'autre devine
+    devineReponse: [
+      "Quel dessert choisirais-je maintenant ?",
+      "Quelle couleur porterais-je pour un rendez-vous ?",
+      "Où voudrais-je partir demain ?",
+      "Quel emoji correspond à mon humeur ?",
+      "Quelle chanson ai-je envie d'écouter ?",
+      "Quel cadeau me ferait rire ?",
+      "Quel film choisirais-je ce soir ?",
+      "Quel souvenir suis-je en train d'imaginer ?",
+    ],
     quiConnait: [
       "Quelle est sa boisson préférée ?",
       "Quel est son plat réconfortant ?",
