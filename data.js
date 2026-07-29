@@ -631,6 +631,27 @@ const SITE_DATA = {
   ],
 
   /* ====================================================================
+     NOS PETITS JEUX — contenu des mini-jeux jouables tout de suite.
+     ==================================================================== */
+  jeux: {
+    // La roue de nos envies : ajoute/enlève des activités librement
+    roue: [
+      "🎬 Regarder un film", "📞 Faire un appel vidéo", "🍽️ Choisir un futur resto",
+      "📸 Envoyer une photo", "💌 Écrire un compliment", "🗺️ Préparer une sortie",
+      "🎵 Écouter la même chanson", "🧠 Faire un petit quiz", "📖 Raconter un souvenir",
+      "✈️ Choisir une destination", "🎙️ Envoyer un vocal", "🎁 Faire une surprise",
+    ],
+    // Notre compatibilité du jour : 5 petites questions, résultat pour rire
+    compatibilite: [
+      { question: "Ton humeur là, maintenant ?", options: ["😌 Calme", "🤩 Excité·e", "😴 Fatigué·e", "🥰 Amoureux·se"] },
+      { question: "Plutôt sortir ou rester ?", options: ["🏠 Rester", "🚶 Sortir"] },
+      { question: "Salé ou sucré ?", options: ["🧂 Salé", "🍰 Sucré"] },
+      { question: "Musique du moment ?", options: ["🎧 Calme", "🔥 Énergique"] },
+      { question: "Envie ce soir ?", options: ["🤫 Calme", "💬 Papoter"] },
+    ],
+  },
+
+  /* ====================================================================
      LES PETITES SURPRISES — enveloppes à ouvrir.
      "contenu" utilise les mêmes types de blocs que "ouvrirQuand".
      ==================================================================== */
