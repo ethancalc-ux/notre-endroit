@@ -13,9 +13,10 @@
    dernier changement (Ctrl+Z) et réessaie tranquillement.
 
    Pour ajouter une photo/vidéo qui t'appartient : dépose le fichier
-   dans le dossier /assets/images, /assets/videos ou /assets/music,
-   puis écris juste son nom ici, par exemple :
-     image: "assets/images/plage-arcachon.jpg"
+   directement dans le dossier du site (à côté de index.html, comme
+   tous les autres fichiers), puis écris juste son nom ici, par
+   exemple :
+     image: "plage-arcachon.jpg"
 
    Pour YouTube : prends l'URL "embed", exemple :
      https://www.youtube.com/embed/XXXXXXXXXXX
@@ -37,16 +38,31 @@ const SITE_DATA = {
   reglages: {
     prenom: "Lorvencia",
     titreSite: "Notre petit endroit",
-    // Ville utilisée pour la météo automatique (page d'accueil)
-    meteoVille: "Bordeaux",
-    meteoLat: 44.8378,
-    meteoLon: -0.5792,
+    // Villes affichées dans le widget météo (dans cet ordre). Ajoute ou
+    // enlève des villes librement — trouve lat/lon en cherchant
+    // "[nom de ville] latitude longitude" sur le web.
+    meteoVilles: [
+      { nom: "Bordeaux", lat: 44.8378, lon: -0.5792 },
+      { nom: "Limoges", lat: 45.8336, lon: 1.2611 },
+    ],
     // Active ou non les petits bonus d'ambiance
     effetEtoiles: true,     // léger effet d'étoiles qui scintillent
-    musiqueAmbiance: false, // mets à true si tu ajoutes un fichier dans assets/music
-    musiqueFichier: "assets/music/ambiance.mp3",
-    // Photo affichée en fond doux sur la page d'accueil (laisse vide "" pour ne rien afficher)
-    photoCouverture: "assets/images/couverture-accueil.jpg",
+    musiqueAmbiance: false, // mets à true si tu ajoutes un fichier ambiance.mp3
+    musiqueFichier: "ambiance.mp3",
+    // Photos affichées dans le carrousel de l'accueil (défilement avec
+    // flèches). Ajoute, enlève ou réordonne librement — chaque photo
+    // doit être dans le dossier du site, comme les autres fichiers.
+    carrouselAccueil: [
+      { src: "carousel-fleurs.jpg", alt: "Un bouquet reçu" },
+      { src: "carousel-pull-ami.jpg", alt: "Nous deux, un soir" },
+      { src: "carousel-joue-contre-joue.jpg", alt: "Joue contre joue" },
+      { src: "carousel-cale-dehors.jpg", alt: "Câlin dehors" },
+      { src: "carousel-lorvencia-lunettes.jpg", alt: "Lorvencia" },
+      { src: "carousel-lorvencia-sourire.jpg", alt: "Le sourire de Lorvencia" },
+    ],
+    // Image de fond décorative, très discrète, derrière la page d'accueil
+    // (laisse vide "" pour revenir aux formes douces générées par CSS)
+    fondDecoratif: "fond-fleurs.jpg",
     // Ton adresse email : c'est là que partira le formulaire "Ma tenue de sport"
     // rempli par Lorvencia. Remplace la valeur ci-dessous par ta vraie adresse.
     emailContact: "ethancalc@icloud.com",
@@ -68,19 +84,29 @@ const SITE_DATA = {
      expliquant qu'il reste une étape de configuration.
      ==================================================================== */
   firebase: {
-    apiKey: "",
-    authDomain: "",
-    databaseURL: "",
-    projectId: "",
-    storageBucket: "",
-    messagingSenderId: "",
-    appId: "",
+    apiKey: "AIzaSyBDHj4A7c5-Ov5cPZpaNrrxLhsEuTxCPUA",
+    authDomain: "notre-projet-d49f3.firebaseapp.com",
+    databaseURL: "https://notre-projet-d49f3-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "notre-projet-d49f3",
+    storageBucket: "notre-projet-d49f3.firebasestorage.app",
+    messagingSenderId: "635009069502",
+    appId: "1:635009069502:web:1d38d7f021438c9e5ba8ef",
   },
   // Un identifiant "secret" pour votre partie : change-le pour quelque
   // chose d'unique à vous deux (évite que quelqu'un qui devinerait
   // l'adresse par défaut puisse voir/modifier votre partie). Pas besoin
   // que ce soit un mot de passe compliqué, juste pas trop générique.
   puissance4Cle: "notre-puissance4-ethan-lorvencia",
+
+  /* ====================================================================
+     WIDGETS "POUR RIRE" DE L'ACCUEIL — lesquels afficher, et dans quel
+     ordre. Les vraies pages (Puissance 4, À ouvrir quand, etc.) sont
+     toutes affichées automatiquement en dessous, pas besoin de les
+     lister ici.
+
+     Noms possibles : envie, meteo, toilettes
+     ==================================================================== */
+  widgetsAmusants: ["envie", "meteo", "toilettes"],
 
   /* ====================================================================
      UNE ENVIE — petit bouton présent sur l'accueil : elle choisit une
@@ -201,11 +227,11 @@ const SITE_DATA = {
      "À OUVRIR QUAND…" — chaque carte ouvre une page dédiée.
      "contenu" est une liste de blocs. Types possibles :
        { type: "texte", valeur: "..." }
-       { type: "image", src: "assets/images/xxx.jpg" }
-       { type: "video", src: "assets/videos/xxx.mp4" }         (fichier MP4)
+       { type: "image", src: "xxx.jpg" }
+       { type: "video", src: "xxx.mp4" }         (fichier MP4)
        { type: "youtube", src: "https://www.youtube.com/embed/ID" }
        { type: "gif", src: "https://media.giphy.com/.../xxx.gif" }
-       { type: "audio", src: "assets/music/xxx.mp3" }
+       { type: "audio", src: "xxx.mp3" }
        { type: "spotify", src: "https://open.spotify.com/embed/..." }
        { type: "drive", src: "https://drive.google.com/file/d/ID/preview" }
      ==================================================================== */
@@ -289,19 +315,10 @@ const SITE_DATA = {
       icone: "🎧",
       titre: "Quand tu veux entendre ma voix",
       contenu: [
-        { type: "texte", valeur: "Ajoute ici un message vocal enregistré (dépose le fichier dans assets/music puis remplace le bloc ci-dessous)." },
-        // { type: "audio", src: "assets/music/message-vocal.mp3" },
+        { type: "texte", valeur: "Ajoute ici un message vocal enregistré (dépose le fichier message-vocal.mp3 dans le dossier du site, puis remplace le bloc ci-dessous)." },
+        // { type: "audio", src: "message-vocal.mp3" },
       ],
     },
-  ],
-
-  /* ====================================================================
-     MES VIDÉOS
-     types possibles : "youtube", "drive", "mp4"
-     ==================================================================== */
-  videos: [
-    // { titre: "Notre week-end à Arcachon", type: "youtube", src: "https://www.youtube.com/embed/XXXXXXXXXXX", miniature: "assets/images/miniature-arcachon.jpg" },
-    // { titre: "Message pour toi", type: "mp4", src: "assets/videos/message.mp4", miniature: "assets/images/miniature-message.jpg" },
   ],
 
   /* ====================================================================
@@ -314,7 +331,8 @@ const SITE_DATA = {
        besoin qu'elle soit publique) puis colle le lien "embed".
      - "drive"   → partage le fichier "en lecture pour toute personne
        ayant le lien" puis utilise le format .../file/d/ID/preview
-     - "mp4"     → dépose le fichier dans assets/videos (idéalement
+     - "mp4"     → dépose le fichier directement dans le dossier du site
+       (idéalement
        moins de 50 Mo par vidéo pour que le site reste rapide)
      - "photo"   → si un jour tu n'as qu'une photo, pas de vidéo
      ==================================================================== */
@@ -322,21 +340,21 @@ const SITE_DATA = {
     {
       id: "vlog-1",
       date: "2026-07-29",
-      titre: "Le premier épisode",
-      texte: "Le tout premier jour où j'ai commencé à construire cet endroit pour toi.",
-      type: "photo",
-      src: "",           // chemin de la vidéo/photo, ex: "assets/videos/jour1.mp4"
-      miniature: "",     // image d'aperçu, ex: "assets/images/miniature-jour1.jpg"
+      titre: "Jour 1",
+      texte: "Le tout premier épisode de ce petit vlog, pour que tu aies un bout de ma journée avec toi.",
+      type: "mp4",
+      src: "vlog-jour1.mp4",
+      miniature: "",     // image d'aperçu, ex: "miniature-jour1.jpg" (facultatif)
     },
-    // Ajoute un épisode par jour sur ce modèle :
+    // Ajoute un épisode par jour sur ce modèle (numérote "Jour 2", "Jour 3"…) :
     // {
     //   id: "vlog-2",
     //   date: "2026-07-30",
-    //   titre: "Une journée tranquille",
+    //   titre: "Jour 2",
     //   texte: "Petite anecdote sur ta journée, ce que tu as fait, à quoi tu as pensé…",
     //   type: "mp4",
-    //   src: "assets/videos/jour2.mp4",
-    //   miniature: "assets/images/miniature-jour2.jpg",
+    //   src: "vlog-jour2.mp4",
+    //   miniature: "",
     // },
   ],
 
@@ -359,29 +377,10 @@ const SITE_DATA = {
   },
 
   /* ====================================================================
-     NOS SOUVENIRS — timeline, groupée par année puis par mois.
-     ==================================================================== */
-  souvenirs: [
-    { annee: "2026", mois: "Juillet", titre: "Le début de cet endroit", texte: "J'ai commencé à construire ce site pour toi, en pensant à toi à chaque ligne.", image: "" },
-    // Ajoute tes propres souvenirs sur ce modèle :
-    // { annee: "2026", mois: "Août", titre: "...", texte: "...", image: "assets/images/....jpg" },
-  ],
-
-  /* ====================================================================
-     NOS PROJETS — cartes à cocher.
-     ==================================================================== */
-  projets: [
-    { id: "appart", titre: "Premier appartement", texte: "Trouver notre premier chez-nous à Lille.", fait: false },
-    { id: "terrasse", titre: "Notre première terrasse", texte: "Un café, un plaid, et du temps pour nous.", fait: false },
-    { id: "vacances", titre: "Nos vacances", texte: "Se reposer vraiment, quelque part au calme.", fait: false },
-    { id: "noel", titre: "Notre premier Noël", texte: "Décorer, cuisiner, tout ralentir.", fait: false },
-    { id: "objectifs", titre: "Nos objectifs", texte: "Le master, le travail, et prendre soin de nous en chemin.", fait: false },
-  ],
-
-  /* ====================================================================
      NOTRE LILLE — lieux à découvrir. "carte" = lien Google Maps.
      Pour l'adresse, tu peux copier-coller le lien "Partager" de
-     Google Maps directement dans "carteLien".
+     Google Maps directement dans "carteLien". "lienArticle" (facultatif)
+     pointe vers un article pour en savoir plus sur le lieu.
      ==================================================================== */
   lieuxLille: [
     {
@@ -392,12 +391,78 @@ const SITE_DATA = {
       adresse: "Vieux-Lille, 59000 Lille",
       image: "",
       carteLien: "https://www.google.com/maps/search/?api=1&query=Vieux+Lille",
+      lienArticle: "",
       tempsAPied: "—",
       tempsEnVoiture: "—",
       note: 0,
       topPersonnel: null,
     },
 
+    /* --- Suggestions ajoutées, pensées pour votre vie étudiante à Lille --- */
+    {
+      id: "jardin-vauban", nom: "Jardin Vauban", categorie: "Parc",
+      description: "Grand jardin à l'anglaise gratuit, parfait pour un pique-nique ou une balade pas chère.",
+      adresse: "1 Boulevard Vauban, 59800 Lille", image: "",
+      carteLien: "https://www.google.com/maps/search/?api=1&query=Jardin+Vauban+Lille",
+      lienArticle: "https://www.lille.fr/vauban-esquermes/Decouvrir-le-quartier/Nature/Le-jardin-Vauban",
+      tempsAPied: "—", tempsEnVoiture: "—", note: 0, topPersonnel: null,
+    },
+    {
+      id: "braderie-de-lille", nom: "Braderie de Lille (5-6 septembre 2026)", categorie: "Événement",
+      description: "Le plus grand marché aux puces d'Europe, gratuit, pile pour votre arrivée. Moules-frites obligatoires.",
+      adresse: "Centre-ville de Lille", image: "",
+      carteLien: "https://www.google.com/maps/search/?api=1&query=Braderie+de+Lille",
+      lienArticle: "https://www.braderie-de-lille.fr/braderie-de-lille-2026-dates-programme/",
+      tempsAPied: "—", tempsEnVoiture: "—", note: 0, topPersonnel: null,
+    },
+    {
+      id: "meert", nom: "Meert", categorie: "Café",
+      description: "La maison de gaufres historique de Lille depuis 1761, un classique romantique du Vieux-Lille.",
+      adresse: "27 Rue Esquermoise, 59800 Lille", image: "",
+      carteLien: "https://www.google.com/maps/search/?api=1&query=Meert+Lille",
+      lienArticle: "https://www.meert.fr/fr/content/10-notre-salon-de-the-de-lille",
+      tempsAPied: "—", tempsEnVoiture: "—", note: 0, topPersonnel: null,
+    },
+    {
+      id: "learning-center", nom: "BU et Learning Center", categorie: "Bibliothèque",
+      description: "Le réseau des bibliothèques universitaires de Lille, pratique pour réviser à deux.",
+      adresse: "Université de Lille", image: "",
+      carteLien: "https://www.google.com/maps/search/?api=1&query=LILLIAD+Learning+Center+Lille",
+      lienArticle: "https://bu.univ-lille.fr/",
+      tempsAPied: "—", tempsEnVoiture: "—", note: 0, topPersonnel: null,
+    },
+    {
+      id: "marche-wazemmes", nom: "Marché de Wazemmes", categorie: "Marché",
+      description: "Marché populaire et animé depuis plus d'un siècle, mardi/jeudi/dimanche, très abordable.",
+      adresse: "Place de la Nouvelle Aventure, 59000 Lille", image: "",
+      carteLien: "https://www.google.com/maps/search/?api=1&query=Marche+de+Wazemmes+Lille",
+      lienArticle: "https://www.lille.fr/wazemmes/Decouvrir-le-quartier/Marche-de-Wazemmes",
+      tempsAPied: "—", tempsEnVoiture: "—", note: 0, topPersonnel: null,
+    },
+    {
+      id: "citadelle-lille", nom: "Parc de la Citadelle", categorie: "Parc",
+      description: "110 hectares, le plus grand espace vert de Lille, entrée gratuite, avec le zoo à l'intérieur.",
+      adresse: "Avenue Mathias Delobel, 59800 Lille", image: "",
+      carteLien: "https://www.google.com/maps/search/?api=1&query=Parc+de+la+Citadelle+Lille",
+      lienArticle: "https://parcdelacitadelle.lille.fr/",
+      tempsAPied: "—", tempsEnVoiture: "—", note: 0, topPersonnel: null,
+    },
+    {
+      id: "zoo-lille", nom: "Zoo de Lille", categorie: "Parc",
+      description: "Gratuit pour les résidents de Lille/Lomme/Hellemmes avec le Pass zoo, sinon quelques euros.",
+      adresse: "Avenue Mathias Delobel, 59800 Lille", image: "",
+      carteLien: "https://www.google.com/maps/search/?api=1&query=Zoo+de+Lille",
+      lienArticle: "https://www.lille.fr/Zoo-de-Lille",
+      tempsAPied: "—", tempsEnVoiture: "—", note: 0, topPersonnel: null,
+    },
+    {
+      id: "freres-pinard", nom: "Les Frères Pinard", categorie: "Bar",
+      description: "Bar à vin-épicerie dans une ruelle pavée du Vieux-Lille, ambiance chaleureuse, à réserver.",
+      adresse: "26 Rue des Vieux Murs, 59800 Lille", image: "",
+      carteLien: "https://www.google.com/maps/search/?api=1&query=Les+Freres+Pinard+Lille",
+      lienArticle: "https://lechti.com/article/les-meilleurs-bars-a-vin-de-lille/",
+      tempsAPied: "—", tempsEnVoiture: "—", note: 0, topPersonnel: null,
+    },
     /* --- Italiens à faire absolument --------------------------------- */
     {
       id: "la-bellezza", nom: "La Bellezza", categorie: "Italien",
@@ -520,8 +585,9 @@ const SITE_DATA = {
     //   categorie: "Restaurant" | "Italien" | "Burger" | "Brasserie" | "Concept" | "Classique" | "Café" | "Balade" | "Musée" | "Parc" | "Bibliothèque" | "Boulangerie" | "Pique-nique",
     //   description: "...",
     //   adresse: "adresse précise si tu l'as (améliore la carte interactive)",
-    //   image: "assets/images/....jpg",
+    //   image: "....jpg",
     //   carteLien: "https://www.google.com/maps/search/?api=1&query=...",
+    //   lienArticle: "https://... (facultatif, un article sur le lieu)",
     //   tempsAPied: "12 min",
     //   tempsEnVoiture: "4 min",
     //   note: 4, // sur 5
@@ -530,94 +596,38 @@ const SITE_DATA = {
   ],
 
   /* ====================================================================
-     APPARTEMENT — annonces suivies.
-     ==================================================================== */
-  appartements: [
-    // {
-    //   titre: "T2 proche métro",
-    //   prix: "650€/mois",
-    //   surface: "42m²",
-    //   quartier: "Vauban-Esquermes",
-    //   lien: "https://www.leboncoin.fr/...",
-    //   plateforme: "Leboncoin",
-    //   notes: "Beaucoup de lumière, à visiter en priorité.",
-    //   image: "",
-    // },
-  ],
-
-  /* ====================================================================
-     PLAYLIST — colle des liens d'intégration Spotify ou YouTube.
-     ==================================================================== */
-  playlists: [
-    // { titre: "Pour se calmer", plateforme: "spotify", src: "https://open.spotify.com/embed/playlist/XXXXXXXXXXXX" },
-  ],
-
-  /* ====================================================================
      FILMS / SÉRIES / DOCS / ANIMES
      ==================================================================== */
-  films: [
-    // { titre: "Le Voyage de Chihiro", categorie: "Anime", vu: false, image: "", notes: "" },
-  ],
-
   /* ====================================================================
-     MES LETTRES
+     YOUTUBE — vidéos qu'elle peut regarder en un clic. Ajoute un lien
+     YouTube et un titre (le titre est juste pour toi, elle ne voit que
+     la miniature). Pour trouver l'ID d'une vidéo YouTube, c'est la
+     partie après "youtu.be/" ou après "v=" dans l'adresse.
      ==================================================================== */
-  lettres: [
-    {
-      id: "premiere-lettre",
-      date: "2026-07-29",
-      titre: "La première",
-      categorie: "Pensée",
-      texte: "Je voulais que la toute première chose que tu trouves ici soit simple : je pense à toi, aujourd'hui, comme tous les jours. Le reste de ce site va se remplir petit à petit, avec toi dedans à chaque page.",
-    },
-  ],
-
-  /* ====================================================================
-     POÈMES — même structure que les lettres.
-     ==================================================================== */
-  poemes: [
-    // { id: "poeme-1", date: "2026-07-29", titre: "...", categorie: "...", texte: "Vers 1\nVers 2\nVers 3" },
-  ],
-
-  /* ====================================================================
-     PHOTOS
-     ==================================================================== */
-  photos: [
-    // "assets/images/photo1.jpg",
-    // "assets/images/photo2.jpg",
-  ],
-
-  /* ====================================================================
-     AUJOURD'HUI — mini journal, un objet par jour.
-     ==================================================================== */
-  journal: [
-    // { date: "2026-07-29", photo: "", anecdote: "", pensee: "Aujourd'hui j'ai pensé à toi en..." },
-  ],
-
-  /* ====================================================================
-     LE COIN SOURIRE
-     ==================================================================== */
-  coinSourire: [
-    // { titre: "Un chat qui n'y arrive pas du tout", type: "youtube", src: "https://www.youtube.com/embed/XXXXXXXXXXX" },
-  ],
-
-  /* ====================================================================
-     NOS RÊVES — moodboard (juste des images, en vrac).
-     ==================================================================== */
-  reves: [
-    // "assets/images/reve1.jpg",
+  youtube: [
+    { id: "dQgG2SBBol0", titre: "Vidéo 1" },
+    { id: "IE4uCwqS0b4", titre: "Vidéo 2" },
+    { id: "Z_vU5jAY138", titre: "Vidéo 3" },
+    { id: "THLO_oc9OjE", titre: "Vidéo 4" },
+    { id: "6uv5RzB8BX8", titre: "Vidéo 5" },
+    { id: "i_5oHWaiaqs", titre: "Vidéo 6" },
+    // Ajoute-en d'autres sur ce modèle :
+    // { id: "XXXXXXXXXXX", titre: "Mon titre" },
   ],
 
   /* ====================================================================
      LES PETITES SURPRISES — enveloppes à ouvrir.
      "contenu" utilise les mêmes types de blocs que "ouvrirQuand".
      ==================================================================== */
+  // "icone" est facultatif (par défaut, une enveloppe ✉️). Change-la pour
+  // une horloge ⏰ par exemple, le temps de préparer de vraies surprises.
   surprises: [
     {
-      id: "surprise-1",
-      titre: "Une petite enveloppe",
+      id: "a-venir",
+      icone: "⏰",
+      titre: "À venir",
       contenu: [
-        { type: "texte", valeur: "Bienvenue dans ta première surprise. Il y en aura d'autres, promis, j'en ajoute régulièrement." },
+        { type: "texte", valeur: "De vraies surprises arrivent bientôt. Reviens régulièrement, cette page se remplit petit à petit." },
       ],
     },
   ],

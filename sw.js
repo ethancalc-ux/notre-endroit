@@ -15,9 +15,9 @@ const CACHE_NAME = 'notre-endroit-v1';
 const APP_SHELL = [
   './',
   './index.html',
-  './css/style.css',
-  './js/data.js',
-  './js/app.js',
+  './style.css',
+  './data.js',
+  './app.js',
   './manifest.json',
 ];
 

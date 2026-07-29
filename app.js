@@ -1,9 +1,9 @@
 /* ======================================================================
-   NOTRE PETIT ENDROIT — app.js
+   NOTRE PETIT ENDROIT, app.js
    ======================================================================
    Ce fichier fait tourner le site : navigation entre pages, animations,
    lecture des données de data.js. Tu ne devrais jamais avoir besoin d'y
-   toucher pour ajouter du contenu — vois plutôt js/data.js pour ça.
+   toucher pour ajouter du contenu, vois plutôt js/data.js pour ça.
 
    Structure de ce fichier :
    1. Utilitaires
@@ -52,7 +52,7 @@ function indexOfDay(max) {
 }
 
 /* ======================================================================
-   2. STOCKAGE LOCAL — mémorise favoris / cases cochées / films vus
+   2. STOCKAGE LOCAL, mémorise favoris / cases cochées / films vus
    directement dans le navigateur, sans backend. Propre à chaque appareil.
    ====================================================================== */
 const Store = {
@@ -75,25 +75,14 @@ const Store = {
    ====================================================================== */
 const ROUTES = [
   { path: 'accueil',        label: 'Accueil',                emoji: '🏡', render: renderAccueil },
-  { path: 'ouvrir-quand',   label: 'À ouvrir quand…',         emoji: '🤍', render: renderOuvrirQuandListe },
-  { path: 'videos',         label: 'Mes vidéos',              emoji: '🎬', render: renderVideos },
-  { path: 'vlog',           label: 'Mon vlog',                emoji: '📹', render: renderVlog },
-  { path: 'souvenirs',      label: 'Nos souvenirs',           emoji: '📸', render: renderSouvenirs },
-  { path: 'projets',        label: 'Nos projets',             emoji: '🌱', render: renderProjets },
-  { path: 'lille',          label: 'Notre Lille',             emoji: '🗺️', render: renderLille },
-  { path: 'appartement',    label: 'Appartement',             emoji: '🔑', render: renderAppartement },
-  { path: 'tenue-sport',    label: 'Ma tenue de sport',       emoji: '👟', render: renderTenueSport },
-  { path: 'playlist',       label: 'Playlist',                emoji: '🎧', render: renderPlaylist },
-  { path: 'films',          label: 'Films & séries',          emoji: '🎞️', render: renderFilms },
-  { path: 'lettres',        label: 'Mes lettres',             emoji: '💌', render: () => renderBibliotheque('lettres') },
-  { path: 'poemes',         label: 'Poèmes',                  emoji: '🖋️', render: () => renderBibliotheque('poemes') },
-  { path: 'photos',         label: 'Photos',                  emoji: '🖼️', render: renderPhotos },
-  { path: 'mot-du-jour',    label: 'Le mot du jour',          emoji: '✨', render: renderMotDuJour },
-  { path: 'aujourdhui',     label: "Aujourd'hui",             emoji: '📔', render: renderAujourdhui },
-  { path: 'sourire',        label: 'Le coin sourire',         emoji: '😊', render: renderCoinSourire },
-  { path: 'puissance4',     label: 'Puissance 4',             emoji: '🔴', render: renderPuissance4 },
-  { path: 'reves',          label: 'Nos rêves',               emoji: '☁️', render: renderReves },
-  { path: 'surprises',      label: 'Petites surprises',       emoji: '🎁', render: renderSurprises },
+  { path: 'ouvrir-quand',   label: 'À ouvrir quand…',         emoji: '🤍', desc: 'Pour les moments qui comptent',     render: renderOuvrirQuandListe },
+  { path: 'vlog',           label: 'Mon vlog',                emoji: '📹', desc: 'Un bout de ma journée, pour toi',   render: renderVlog },
+  { path: 'lille',          label: 'Notre Lille',             emoji: '🗺️', desc: 'Les lieux qu\'on veut découvrir',   render: renderLille },
+  { path: 'tenue-sport',    label: 'Ma tenue de sport',       emoji: '👟', desc: 'Choisis-moi une tenue',             render: renderTenueSport },
+  { path: 'youtube',        label: 'YouTube',                 emoji: '▶️', desc: 'Nos vidéos, en un clic',            render: renderYoutube },
+  { path: 'mot-du-jour',    label: 'Le mot du jour',          emoji: '✨', desc: 'Une pensée par jour',               render: renderMotDuJour },
+  { path: 'puissance4',     label: 'Puissance 4',             emoji: '🔴', desc: 'On y joue à deux, en direct',       render: renderPuissance4 },
+  { path: 'surprises',      label: 'Petites surprises',       emoji: '🎁', desc: 'Des enveloppes à ouvrir',           render: renderSurprises },
 ];
 
 function currentRoute() {
@@ -172,10 +161,8 @@ function buildSearchIndex() {
   const index = [];
   ROUTES.forEach(r => index.push({ label: r.label, path: r.path }));
   D.ouvrirQuand.forEach(o => index.push({ label: o.titre, path: `ouvrir-quand/${o.id}` }));
-  D.lettres.forEach(l => index.push({ label: `Lettre — ${l.titre}`, path: `lettres/${l.id}` }));
-  D.poemes.forEach(p => index.push({ label: `Poème — ${p.titre}`, path: `poemes/${p.id}` }));
-  D.lieuxLille.forEach(p => index.push({ label: `Lille — ${p.nom}`, path: `lille` }));
-  D.vlog.forEach(v => index.push({ label: `Vlog — ${v.titre}`, path: `vlog` }));
+  D.lieuxLille.forEach(p => index.push({ label: `Lille, ${p.nom}`, path: `lille` }));
+  D.vlog.forEach(v => index.push({ label: `Vlog, ${v.titre}`, path: `vlog` }));
   return index;
 }
 function runSearch(query) {
@@ -219,23 +206,32 @@ const WEATHER_CODES = {
   65: ['🌧️', 'forte pluie'], 71: ['🌨️', 'neige légère'], 73: ['🌨️', 'neige'],
   75: ['❄️', 'forte neige'], 80: ['🌦️', 'averses'], 95: ['⛈️', 'orage'],
 };
-async function loadWeather(container) {
+async function fetchWeatherFor(ville) {
   try {
-    const { meteoLat, meteoLon, meteoVille } = D.reglages;
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${meteoLat}&longitude=${meteoLon}&current=temperature_2m,weather_code`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${ville.lat}&longitude=${ville.lon}&current=temperature_2m,weather_code`;
     const res = await fetch(url);
     const data = await res.json();
     const code = data.current.weather_code;
     const [icon, desc] = WEATHER_CODES[code] || ['🌥️', 'temps changeant'];
-    container.innerHTML = `
-      <div class="weather-icon">${icon}</div>
-      <div>
-        <div class="weather-temp">${Math.round(data.current.temperature_2m)}°C</div>
-        <div style="color:var(--ink-soft);font-size:.85rem;">${desc} à ${meteoVille}</div>
-      </div>`;
+    return { ok: true, nom: ville.nom, icon, desc, temp: Math.round(data.current.temperature_2m) };
   } catch {
-    container.innerHTML = `<div style="color:var(--ink-soft);font-size:.9rem;">Météo indisponible pour le moment.</div>`;
+    return { ok: false, nom: ville.nom };
   }
+}
+
+async function loadWeather(container) {
+  const villes = D.reglages.meteoVilles || [];
+  if (!villes.length) { container.innerHTML = `<div style="color:var(--ink-soft);font-size:.9rem;">Aucune ville configurée.</div>`; return; }
+  const resultats = await Promise.all(villes.map(fetchWeatherFor));
+  container.innerHTML = resultats.map(r => r.ok ? `
+    <div class="weather-row">
+      <div class="weather-icon">${r.icon}</div>
+      <div>
+        <div class="weather-temp">${r.temp}°C</div>
+        <div style="color:var(--ink-soft);font-size:.85rem;">${r.desc} à ${r.nom}</div>
+      </div>
+    </div>` : `<div style="color:var(--ink-soft);font-size:.85rem;">Météo indisponible pour ${r.nom}.</div>`
+  ).join('');
 }
 
 /* --- Compteur ----------------------------------------------------------- */
@@ -268,13 +264,78 @@ function mountCounter(container, compteurId) {
    5. RENDU DES PAGES
    ====================================================================== */
 
+/* --- Carrousel de photos (accueil) ---------------------------------------
+   Utilise le défilement natif du navigateur (scroll-snap) plutôt que des
+   calculs de position en JS : c'est ce qui rend le glisser aussi fluide
+   qu'une vraie application, y compris au doigt sur téléphone. */
+function mountCarousel(page) {
+  const photos = D.reglages.carrouselAccueil;
+  const track = page.querySelector('#carousel-track');
+  const dotsEl = page.querySelector('#carousel-dots');
+
+  track.innerHTML = photos.map(p =>
+    `<div class="carousel-slide"><img src="${p.src}" alt="${escapeHtml(p.alt || '')}" loading="lazy"><span class="carousel-heart">♥</span></div>`
+  ).join('');
+  dotsEl.innerHTML = photos.map((_, i) =>
+    `<button class="carousel-dot ${i === 0 ? 'active' : ''}" data-i="${i}" aria-label="Photo ${i + 1}"></button>`
+  ).join('');
+
+  const slides = $$('.carousel-slide', track);
+  function markActive(idx) {
+    slides.forEach((s, i) => s.classList.toggle('is-active', i === idx));
+  }
+  markActive(0);
+
+  function currentIndex() {
+    const center = track.getBoundingClientRect().left + track.getBoundingClientRect().width / 2;
+    let closest = 0, min = Infinity;
+    slides.forEach((s, i) => {
+      const r = s.getBoundingClientRect();
+      const d = Math.abs((r.left + r.width / 2) - center);
+      if (d < min) { min = d; closest = i; }
+    });
+    return closest;
+  }
+  function goTo(i) {
+    slides[Math.max(0, Math.min(slides.length - 1, i))]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+
+  page.querySelector('#carousel-prev').addEventListener('click', () => goTo(currentIndex() - 1));
+  page.querySelector('#carousel-next').addEventListener('click', () => goTo(currentIndex() + 1));
+  dotsEl.addEventListener('click', e => {
+    const btn = e.target.closest('[data-i]'); if (!btn) return;
+    goTo(parseInt(btn.dataset.i, 10));
+  });
+
+  let ticking = false;
+  track.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const idx = currentIndex();
+      $$('.carousel-dot', dotsEl).forEach((d, i) => d.classList.toggle('active', i === idx));
+      markActive(idx);
+      ticking = false;
+    });
+  });
+}
+
 /* --- Page d'accueil ------------------------------------------------------*/
 function renderAccueil() {
   const page = el(`<div class="page home-hero">
+    ${D.reglages.fondDecoratif
+      ? `<img class="bg-decor" src="${D.reglages.fondDecoratif}" alt="" aria-hidden="true" loading="lazy">`
+      : `<div class="bg-blob bg-blob-1" aria-hidden="true"></div><div class="bg-blob bg-blob-2" aria-hidden="true"></div>`}
     <span class="page-header eyebrow" style="display:block;">Bienvenue</span>
     <h1>${escapeHtml(D.reglages.titreSite)} <span style="color:var(--gold);">♥</span></h1>
-    <p class="subtitle">Un endroit rien qu'à toi. Rien à écrire, rien à répondre — juste à te poser.</p>
-    ${D.reglages.photoCouverture ? `<div class="hero-photo-wrap"><img class="hero-photo" src="${D.reglages.photoCouverture}" alt="Nous deux" loading="lazy"></div>` : ''}
+    <p class="subtitle">Un endroit rien qu'à toi. Rien à écrire, rien à répondre, juste à te poser.</p>
+    ${D.reglages.carrouselAccueil?.length ? `
+    <div class="carousel-wrap" id="carousel-wrap">
+      <button class="carousel-arrow carousel-prev" id="carousel-prev" aria-label="Photo précédente">‹</button>
+      <div class="carousel-track" id="carousel-track"></div>
+      <button class="carousel-arrow carousel-next" id="carousel-next" aria-label="Photo suivante">›</button>
+    </div>
+    <div class="carousel-dots" id="carousel-dots"></div>` : ''}
 
     <div class="hug-wrap">
       <div class="hug-halo"></div>
@@ -288,7 +349,6 @@ function renderAccueil() {
     </div>
 
     <div class="section">
-      <div class="section-title" style="justify-content:center;"><h2 style="font-size:1rem;color:var(--ink-soft);font-family:var(--font-body);font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Explorer</h2></div>
       <div class="widget-grid" id="widget-grid"></div>
     </div>
 
@@ -300,6 +360,11 @@ function renderAccueil() {
       <div style="color:var(--ink-soft);">Chargement de la météo…</div>
     </div>
     <p class="weather-note" style="max-width:520px;margin:0 auto;">Peu importe la météo dehors, j'espère qu'il fera toujours un peu plus beau dans ton cœur.</p>
+
+    <div class="section">
+      <div class="section-title" style="justify-content:center;"><h2 style="font-size:1rem;color:var(--ink-soft);font-family:var(--font-body);font-weight:600;letter-spacing:.04em;text-transform:uppercase;">Explorer notre univers</h2></div>
+      <div class="page-card-grid" id="page-card-grid"></div>
+    </div>
   </div>`);
 
   // Citation du jour (manuelle si définie, sinon automatique)
@@ -327,22 +392,38 @@ function renderAccueil() {
   // Météo
   loadWeather(page.querySelector('#weather-box'));
 
-  // Grille de widgets — navigation principale, pensée pour le mobile :
-  // on tape une tuile, on arrive directement sur la page, sans avoir
-  // à ouvrir le menu ☰. On y ajoute aussi deux tuiles "pour rire" qui
-  // n'ouvrent pas une page mais une petite fenêtre.
-  const pageTiles = ROUTES
+  // Carrousel de photos
+  if (D.reglages.carrouselAccueil?.length) mountCarousel(page);
+
+  // Widgets compacts "pour rire" — s'affichent en petites tuiles carrées.
+  // Ce qui apparaît ici (et dans quel ordre) se règle dans data.js,
+  // section "widgetsAmusants".
+  const FUN_WIDGETS = {
+    envie:      { emoji: '💬', label: 'Une envie',            onClick: openEnvieWidget },
+    meteo:      { emoji: '🌤️', label: 'Météo',                 onClick: openWeatherWidget },
+    toilettes:  { emoji: '🚽', label: 'Compteur toilettes',   onClick: openToiletCounter },
+  };
+  const widgetKeys = D.reglages.widgetsAmusants || [];
+  page.querySelector('#widget-grid').innerHTML = widgetKeys
+    .map(key => FUN_WIDGETS[key] ? { ...FUN_WIDGETS[key], key } : null)
+    .filter(Boolean)
+    .map(w => `<button class="widget-tile" data-fun="${w.key}" type="button"><span class="widget-icon">${w.emoji}</span><span class="widget-label">${escapeHtml(w.label)}</span></button>`)
+    .join('');
+  page.querySelectorAll('[data-fun]').forEach(btn => {
+    btn.addEventListener('click', () => FUN_WIDGETS[btn.dataset.fun].onClick());
+  });
+
+  // Cartes des pages — toutes les pages du site (ROUTES, sauf l'accueil
+  // lui-même), avec icône, titre et petite description, façon vitrine.
+  page.querySelector('#page-card-grid').innerHTML = ROUTES
     .filter(r => r.path !== 'accueil')
-    .map(r => `<a class="widget-tile" href="#/${r.path}"><span class="widget-icon">${r.emoji}</span><span class="widget-label">${escapeHtml(r.label)}</span></a>`);
-  const funTiles = [
-    `<button class="widget-tile" id="widget-envie" type="button"><span class="widget-icon">💬</span><span class="widget-label">Une envie</span></button>`,
-    `<button class="widget-tile" id="widget-meteo" type="button"><span class="widget-icon">🌤️</span><span class="widget-label">Météo</span></button>`,
-    `<button class="widget-tile" id="widget-toilettes" type="button"><span class="widget-icon">🚽</span><span class="widget-label">Compteur toilettes</span></button>`,
-  ];
-  page.querySelector('#widget-grid').innerHTML = [...pageTiles, ...funTiles].join('');
-  page.querySelector('#widget-envie').addEventListener('click', openEnvieWidget);
-  page.querySelector('#widget-meteo').addEventListener('click', openWeatherWidget);
-  page.querySelector('#widget-toilettes').addEventListener('click', openToiletCounter);
+    .map(r => `
+      <a class="page-card" href="#/${r.path}">
+        <span class="page-card-icon">${r.emoji}</span>
+        <h3>${escapeHtml(r.label)}</h3>
+        <p>${escapeHtml(r.desc || '')}</p>
+      </a>`)
+    .join('');
 
   return page;
 }
@@ -468,33 +549,6 @@ function renderOuvrirQuandDetail(id) {
   return page;
 }
 
-/* --- Mes vidéos -----------------------------------------------------------*/
-function renderVideos() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Souvenirs en mouvement</span><h1>Mes vidéos</h1></div>
-    <div class="grid" id="video-grid"></div>
-  </div>`);
-  const grid = page.querySelector('#video-grid');
-  if (!D.videos.length) {
-    grid.innerHTML = emptyState('🎬', "Pas encore de vidéo — ajoute-en dans js/data.js, section « videos ».");
-  } else {
-    grid.innerHTML = D.videos.map((v, i) => `
-      <button class="card card-link" style="text-align:left;width:100%;border:none;" data-i="${i}">
-        <div class="card-cover">${v.miniature ? `<img src="${v.miniature}" alt="">` : '🎬'}</div>
-        <h3>${escapeHtml(v.titre)}</h3>
-      </button>`).join('');
-    grid.addEventListener('click', e => {
-      const btn = e.target.closest('[data-i]'); if (!btn) return;
-      const v = D.videos[btn.dataset.i];
-      const html = v.type === 'mp4'
-        ? `<video src="${v.src}" controls style="width:100%;border-radius:16px;"></video>`
-        : `<iframe class="embed-frame" src="${v.src}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
-      openModal({ glyph: '🎬', bodyHtml: `<h3 style="margin-bottom:12px;">${escapeHtml(v.titre)}</h3>${html}` });
-    });
-  }
-  return page;
-}
-
 /* --- Mon vlog (épisodes vidéo/photo du jour, du plus récent au plus ancien) --*/
 function renderVlog() {
   const page = el(`<div class="page">
@@ -505,7 +559,7 @@ function renderVlog() {
   const sorted = [...D.vlog].sort((a, b) => b.date.localeCompare(a.date));
 
   if (!sorted.length) {
-    grid.innerHTML = emptyState('📹', "Pas encore d'épisode — ajoute-en dans js/data.js, section « vlog ».");
+    grid.innerHTML = emptyState('📹', "Pas encore d'épisode, ajoute-en dans js/data.js, section « vlog ».");
     return page;
   }
 
@@ -529,65 +583,6 @@ function renderVlog() {
       glyph: '📹',
       bodyHtml: `<div class="letter-date">${formatDateLong(v.date)}</div><h3 style="margin:6px 0 12px;">${escapeHtml(v.titre)}</h3>${mediaHtml}${v.texte ? `<p>${escapeHtml(v.texte)}</p>` : ''}`,
     });
-  });
-  return page;
-}
-
-/* --- Nos souvenirs (timeline) ---------------------------------------------*/
-function renderSouvenirs() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Notre histoire</span><h1>Nos souvenirs</h1></div>
-    <div class="timeline" id="timeline"></div>
-  </div>`);
-  const byYear = {};
-  D.souvenirs.forEach(s => { (byYear[s.annee] ||= []).push(s); });
-  const years = Object.keys(byYear).sort((a, b) => b - a);
-  const tl = page.querySelector('#timeline');
-  if (!years.length) {
-    tl.innerHTML = emptyState('📸', "La timeline est vide pour l'instant — ajoute vos souvenirs dans js/data.js.");
-  } else {
-    tl.innerHTML = years.map(y => `
-      <div class="timeline-year">${y}</div>
-      ${byYear[y].map(s => `
-        <div class="timeline-item">
-          <div class="month">${escapeHtml(s.mois)}</div>
-          <h3 style="margin:4px 0;">${escapeHtml(s.titre)}</h3>
-          ${s.image ? `<img src="${s.image}" alt="" style="border-radius:14px;max-width:320px;margin-bottom:8px;">` : ''}
-          <p>${escapeHtml(s.texte)}</p>
-        </div>`).join('')}
-    `).join('');
-  }
-  return page;
-}
-
-/* --- Nos projets (checklist) -----------------------------------------------*/
-function renderProjets() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Ce qu'on construit</span><h1>Nos projets</h1></div>
-    <div class="grid" id="projets-grid"></div>
-  </div>`);
-  const grid = page.querySelector('#projets-grid');
-  const doneSet = new Set(Store.get('projets-faits', D.projets.filter(p => p.fait).map(p => p.id)));
-
-  function paint() {
-    grid.innerHTML = D.projets.map(p => `
-      <div class="card">
-        <h3>${escapeHtml(p.titre)}</h3>
-        <p>${escapeHtml(p.texte)}</p>
-        <div class="checklist" style="margin-top:12px;">
-          <div class="check-row ${doneSet.has(p.id) ? 'done' : ''}" data-id="${p.id}">
-            <div class="check-box">${doneSet.has(p.id) ? '✓' : ''}</div>
-            <span class="check-label">${doneSet.has(p.id) ? 'Réalisé' : 'À réaliser'}</span>
-          </div>
-        </div>
-      </div>`).join('');
-  }
-  paint();
-  grid.addEventListener('click', e => {
-    const row = e.target.closest('.check-row'); if (!row) return;
-    doneSet.has(row.dataset.id) ? doneSet.delete(row.dataset.id) : doneSet.add(row.dataset.id);
-    Store.set('projets-faits', Array.from(doneSet));
-    paint();
   });
   return page;
 }
@@ -618,16 +613,15 @@ function renderLille() {
           <h3>${escapeHtml(l.nom)}</h3>
           <button class="fav-btn ${Store.has(favKey, l.id) ? 'active' : ''}" data-fav="${l.id}" aria-label="Favori">★</button>
         </div>
+        <span class="place-category">${escapeHtml(l.categorie)}</span>
         <p>${escapeHtml(l.description)}</p>
-        <div class="place-meta">
-          <span>${escapeHtml(l.categorie)}</span>
-          ${l.note ? `<span>⭐ ${l.note}/5</span>` : ''}
-        </div>
+        ${l.note ? `<div class="place-meta"><span>⭐ ${l.note}/5</span></div>` : ''}
         <div class="place-actions">
-          <a class="btn btn-ghost btn-sm" href="${l.carteLien}" target="_blank" rel="noopener">Ouvrir dans Maps</a>
-          <button class="btn btn-ghost btn-sm" data-locate="${l.id}">📍 Sur la carte</button>
+          <a class="btn btn-ghost btn-sm" href="${l.carteLien}" target="_blank" rel="noopener">📍 Maps</a>
+          ${l.lienArticle ? `<a class="btn btn-ghost btn-sm" href="${l.lienArticle}" target="_blank" rel="noopener">📖 En savoir plus</a>` : ''}
+          <button class="btn btn-ghost btn-sm" data-locate="${l.id}">🗺️ Sur la carte</button>
         </div>
-      </div>`).join('') : emptyState('🗺️', "Pas encore de lieu — ajoute-les dans js/data.js, section « lieuxLille ».");
+      </div>`).join('') : emptyState('🗺️', "Pas encore de lieu, ajoute-les dans js/data.js, section « lieuxLille ».");
 
     grid.querySelectorAll('[data-fav]').forEach(btn => btn.addEventListener('click', () => {
       Store.toggleInSet(favKey, btn.dataset.fav);
@@ -705,7 +699,7 @@ function mountLilleMap(container, statusEl) {
       if (!fromCache) await new Promise(r => setTimeout(r, 1100));
     }
     statusEl.textContent = placed
-      ? `${placed} lieu${placed > 1 ? 'x' : ''} sur la carte — clique un repère pour plus d'infos.`
+      ? `${placed} lieu${placed > 1 ? 'x' : ''} sur la carte, clique un repère pour plus d'infos.`
       : `La carte n'a pas pu localiser les lieux pour l'instant.`;
     if (placed) {
       const group = L.featureGroup(Object.values(markers));
@@ -719,25 +713,6 @@ function mountLilleMap(container, statusEl) {
     map.setView(marker.getLatLng(), 15, { animate: true });
     marker.openPopup();
   };
-}
-
-/* --- Appartement -----------------------------------------------------------*/
-function renderAppartement() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Notre futur chez-nous</span><h1>Appartement</h1></div>
-    <div class="grid" id="appt-grid"></div>
-  </div>`);
-  page.querySelector('#appt-grid').innerHTML = D.appartements.length ? D.appartements.map(a => `
-    <div class="card">
-      <div class="card-cover">${a.image ? `<img src="${a.image}" alt="">` : '🔑'}</div>
-      <h3>${escapeHtml(a.titre)}</h3>
-      <div class="place-meta"><span>${escapeHtml(a.prix)}</span><span>${escapeHtml(a.surface)}</span><span>${escapeHtml(a.quartier)}</span></div>
-      ${a.notes ? `<p>${escapeHtml(a.notes)}</p>` : ''}
-      <div class="place-actions">
-        <a class="btn btn-ghost btn-sm" href="${a.lien}" target="_blank" rel="noopener">Voir sur ${escapeHtml(a.plateforme || 'le site')}</a>
-      </div>
-    </div>`).join('') : emptyState('🔑', "Aucune annonce pour l'instant — ajoute-les dans js/data.js, section « appartements ».");
-  return page;
 }
 
 /* --- Ma tenue de sport (formulaire rempli par elle, envoyé par email) -------*/
@@ -815,7 +790,7 @@ function renderTenueSport() {
       .filter(r => r.nom || r.lien);
     if (!rows.length) return null;
     return rows.map((r, i) =>
-      `${i + 1}. ${r.nom || 'Article'}${r.lien ? ` — ${r.lien}` : ''}${r.taille ? ` (taille : ${r.taille})` : ''}${r.notes ? ` — ${r.notes}` : ''}`
+      `${i + 1}. ${r.nom || 'Article'}${r.lien ? `, ${r.lien}` : ''}${r.taille ? ` (taille : ${r.taille})` : ''}${r.notes ? `, ${r.notes}` : ''}`
     ).join('\n');
   }
 
@@ -826,7 +801,7 @@ function renderTenueSport() {
     const subject = encodeURIComponent('Ma tenue de sport 🏋️');
     const body = encodeURIComponent(`Voici ce que j'ai choisi pour toi :\n\n${message}\n`);
     window.location.href = `mailto:${D.reglages.emailContact}?subject=${subject}&body=${body}`;
-    feedback.textContent = "Ton application mail va s'ouvrir avec tout prérempli — il ne reste qu'à envoyer.";
+    feedback.textContent = "Ton application mail va s'ouvrir avec tout prérempli, il ne reste qu'à envoyer.";
   });
 
   page.querySelector('#tenue-copy').addEventListener('click', async () => {
@@ -837,108 +812,41 @@ function renderTenueSport() {
       await navigator.clipboard.writeText(message);
       feedback.textContent = "Copié ! Tu peux le coller où tu veux (SMS, WhatsApp…).";
     } catch {
-      feedback.textContent = "Impossible de copier automatiquement — sélectionne le texte manuellement.";
+      feedback.textContent = "Impossible de copier automatiquement, sélectionne le texte manuellement.";
     }
   });
 
   return page;
 }
 
-/* --- Playlist ----------------------------------------------------------------*/
-function renderPlaylist() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Notre bande-son</span><h1>Playlist</h1></div>
-    <div class="grid" id="pl-grid"></div>
-  </div>`);
-  page.querySelector('#pl-grid').innerHTML = D.playlists.length ? D.playlists.map(p => `
-    <div class="card"><h3>${escapeHtml(p.titre)}</h3>
-      <iframe class="embed-frame audio" src="${p.src}" allow="encrypted-media" loading="lazy"></iframe>
-    </div>`).join('') : emptyState('🎧', "Pas encore de playlist — ajoute des liens Spotify/YouTube dans js/data.js.");
-  return page;
-}
-
 /* --- Films / séries ----------------------------------------------------------*/
-function renderFilms() {
+function renderYoutube() {
   const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">À regarder ensemble</span><h1>Films &amp; séries</h1></div>
-    <div class="lib-filter" id="films-filter">
-      <button class="chip active" data-f="tous">Tous</button>
-      <button class="chip" data-f="avoir">À voir</button>
-      <button class="chip" data-f="vu">Vus</button>
+    <div class="page-header">
+      <span class="eyebrow">Nos vidéos</span>
+      <h1><span class="youtube-badge" aria-hidden="true">▶</span> YouTube</h1>
+      <p>Clique une miniature, ça s'ouvre directement.</p>
     </div>
-    <div class="grid" id="films-grid"></div>
+    <div class="grid" id="youtube-grid"></div>
   </div>`);
-  const key = 'films-vus';
-  function paint(filter = 'tous') {
-    let list = D.films;
-    if (filter === 'avoir') list = list.filter(f => !Store.has(key, f.titre));
-    if (filter === 'vu')    list = list.filter(f =>  Store.has(key, f.titre));
-    const grid = page.querySelector('#films-grid');
-    grid.innerHTML = list.length ? list.map(f => `
-      <div class="card">
-        <div class="card-cover">${f.image ? `<img src="${f.image}" alt="">` : '🎞️'}</div>
-        <h3>${escapeHtml(f.titre)}</h3>
-        <p>${escapeHtml(f.categorie || '')}</p>
-        <button class="btn btn-sm ${Store.has(key, f.titre) ? 'btn-ghost' : 'btn-primary'}" data-toggle="${escapeHtml(f.titre)}" style="margin-top:8px;">
-          ${Store.has(key, f.titre) ? '✓ Vu' : 'Marquer comme vu'}
-        </button>
-      </div>`).join('') : emptyState('🎞️', "Bibliothèque vide — ajoute des titres dans js/data.js, section « films ».");
-    grid.querySelectorAll('[data-toggle]').forEach(btn => btn.addEventListener('click', () => {
-      Store.toggleInSet(key, btn.dataset.toggle);
-      paint(page.querySelector('.chip.active')?.dataset.f || 'tous');
-    }));
-  }
-  paint();
-  page.querySelector('#films-filter').addEventListener('click', e => {
-    const btn = e.target.closest('.chip'); if (!btn) return;
-    $$('.chip', page.querySelector('#films-filter')).forEach(c => c.classList.remove('active'));
-    btn.classList.add('active');
-    paint(btn.dataset.f);
+  const grid = page.querySelector('#youtube-grid');
+  const videos = D.youtube || [];
+  grid.innerHTML = videos.length ? videos.map((v, i) => `
+    <button class="card card-link youtube-card" style="text-align:left;width:100%;border:none;" data-i="${i}">
+      <div class="card-cover youtube-thumb">
+        <img src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy">
+        <span class="youtube-play" aria-hidden="true">▶</span>
+      </div>
+    </button>`).join('') : emptyState('▶️', "Pas encore de vidéo, ajoute des liens YouTube dans js/data.js, section « youtube ».");
+
+  grid.addEventListener('click', e => {
+    const btn = e.target.closest('[data-i]'); if (!btn) return;
+    const v = videos[btn.dataset.i];
+    openModal({
+      glyph: '▶️',
+      bodyHtml: `<iframe class="embed-frame" src="https://www.youtube.com/embed/${v.id}?autoplay=1" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`,
+    });
   });
-  return page;
-}
-
-/* --- Bibliothèque partagée : lettres & poèmes --------------------------------*/
-function renderBibliotheque(type) {
-  const items = D[type];
-  const titre = type === 'lettres' ? 'Mes lettres' : 'Poèmes';
-  const eyebrow = type === 'lettres' ? 'Des mots pour toi' : 'Des vers pour toi';
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">${eyebrow}</span><h1>${titre}</h1></div>
-    <div class="grid" id="lib-grid"></div>
-  </div>`);
-  page.querySelector('#lib-grid').innerHTML = items.length ? items.map(l => `
-    <a class="card card-link" href="#/${type}/${l.id}">
-      <div class="letter-date">${formatDateLong(l.date)} · ${escapeHtml(l.categorie || '')}</div>
-      <h3>${escapeHtml(l.titre)}</h3>
-    </a>`).join('') : emptyState('💌', `Rien pour l'instant — ajoute des textes dans js/data.js, section « ${type} ».`);
-  return page;
-}
-function renderBibliothequeDetail(type, id) {
-  const item = D[type].find(l => l.id === id);
-  if (!item) return renderBibliotheque(type);
-  const page = el(`<div class="page">
-    <a href="#/${type}" class="btn btn-ghost btn-sm" style="margin-bottom:24px;">← Retour</a>
-    <div class="letter-reader">
-      <div class="letter-date">${formatDateLong(item.date)} · ${escapeHtml(item.categorie || '')}</div>
-      <h2>${escapeHtml(item.titre)}</h2>
-      <div class="letter-body">${escapeHtml(item.texte)}</div>
-    </div>
-  </div>`);
-  return page;
-}
-
-/* --- Photos (galerie + lightbox) ----------------------------------------------*/
-function renderPhotos() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Nos images</span><h1>Photos</h1></div>
-    <div class="photo-grid" id="photo-grid"></div>
-  </div>`);
-  const grid = page.querySelector('#photo-grid');
-  grid.innerHTML = D.photos.length
-    ? D.photos.map(src => `<img src="${src}" alt="" loading="lazy">`).join('')
-    : emptyState('🖼️', "Galerie vide — dépose des images dans assets/images puis liste-les dans js/data.js.");
-  grid.addEventListener('click', e => { if (e.target.tagName === 'IMG') openLightbox(e.target.src); });
   return page;
 }
 
@@ -954,38 +862,8 @@ function renderMotDuJour() {
   </div>`);
 }
 
-/* --- Aujourd'hui (mini journal) -------------------------------------------------*/
-function renderAujourdhui() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Mini journal</span><h1>Aujourd'hui</h1></div>
-    <div class="grid grid-2" id="journal-grid"></div>
-  </div>`);
-  const sorted = [...D.journal].sort((a, b) => b.date.localeCompare(a.date));
-  page.querySelector('#journal-grid').innerHTML = sorted.length ? sorted.map(j => `
-    <div class="card">
-      <div class="letter-date">${formatDateLong(j.date)}</div>
-      ${j.photo ? `<img src="${j.photo}" alt="" style="border-radius:14px;margin:8px 0;">` : ''}
-      ${j.anecdote ? `<p><strong>Aujourd'hui :</strong> ${escapeHtml(j.anecdote)}</p>` : ''}
-      ${j.pensee ? `<p style="font-style:italic;color:var(--ink-soft);">${escapeHtml(j.pensee)}</p>` : ''}
-    </div>`).join('') : emptyState('📔', "Le journal est vide — ajoute une entrée par jour dans js/data.js, section « journal ».");
-  return page;
-}
-
-/* --- Le coin sourire -------------------------------------------------------------*/
-function renderCoinSourire() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Pour rire un peu</span><h1>Le coin sourire</h1></div>
-    <div class="grid" id="sourire-grid"></div>
-  </div>`);
-  page.querySelector('#sourire-grid').innerHTML = D.coinSourire.length ? D.coinSourire.map(v => `
-    <div class="card"><h3>${escapeHtml(v.titre)}</h3>
-      <iframe class="embed-frame" src="${v.src}" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
-    </div>`).join('') : emptyState('😊', "Vide pour l'instant — ajoute des vidéos drôles dans js/data.js, section « coinSourire ».");
-  return page;
-}
-
 /* ======================================================================
-   PUISSANCE 4 EN LIGNE — jeu en temps réel via Firebase Realtime
+   PUISSANCE 4 EN LIGNE, jeu en temps réel via Firebase Realtime
    Database. Grille stockée à plat : 42 cases (6 lignes × 7 colonnes),
    index = ligne*7 + colonne, ligne 0 = tout en bas du plateau.
    ====================================================================== */
@@ -1019,7 +897,7 @@ function renderPuissance4() {
   const root = page.querySelector('#c4-root');
 
   if (!fbConf.apiKey) {
-    root.innerHTML = emptyState('🔴', "Il manque une dernière étape de configuration (gratuite, ~10 min) pour activer le jeu en temps réel — regarde la section « Puissance 4 en ligne » du README.");
+    root.innerHTML = emptyState('🔴', "Il manque une dernière étape de configuration (gratuite, ~10 min) pour activer le jeu en temps réel, regarde la section « Puissance 4 en ligne » du README.");
     return page;
   }
 
@@ -1140,20 +1018,6 @@ function renderPuissance4() {
   return page;
 }
 
-/* --- Nos rêves (moodboard) -------------------------------------------------------*/
-function renderReves() {
-  const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Ce qu'on imagine</span><h1>Nos rêves</h1></div>
-    <div class="moodboard" id="reves-grid"></div>
-  </div>`);
-  const grid = page.querySelector('#reves-grid');
-  grid.innerHTML = D.reves.length
-    ? D.reves.map(src => `<img src="${src}" alt="" loading="lazy">`).join('')
-    : emptyState('☁️', "Moodboard vide — ajoute des images d'inspiration dans js/data.js, section « reves ».");
-  grid.addEventListener('click', e => { if (e.target.tagName === 'IMG') openLightbox(e.target.src); });
-  return page;
-}
-
 /* --- Les petites surprises (enveloppes) ----------------------------------------*/
 function renderSurprises() {
   const page = el(`<div class="page">
@@ -1164,18 +1028,18 @@ function renderSurprises() {
   const grid = page.querySelector('#surprises-grid');
   grid.innerHTML = D.surprises.length ? D.surprises.map(s => `
     <div class="card envelope ${Store.has(openedKey, s.id) ? 'opened' : ''}" data-id="${s.id}">
-      <span class="flap">✉️</span>
+      <span class="flap">${s.icone || '✉️'}</span>
       <h3>${escapeHtml(s.titre)}</h3>
-      <p style="font-size:.85rem;">${Store.has(openedKey, s.id) ? 'Déjà ouverte — clique pour revoir' : 'Clique pour ouvrir'}</p>
-    </div>`).join('') : emptyState('🎁', "Pas encore de surprise — ajoute-en dans js/data.js, section « surprises ».");
+      <p style="font-size:.85rem;">${Store.has(openedKey, s.id) ? 'Déjà ouverte, clique pour revoir' : 'Clique pour ouvrir'}</p>
+    </div>`).join('') : emptyState('🎁', "Pas encore de surprise, ajoute-en dans js/data.js, section « surprises ».");
 
   grid.addEventListener('click', e => {
     const card = e.target.closest('.envelope'); if (!card) return;
     const s = D.surprises.find(x => x.id === card.dataset.id);
     Store.toggleInSet(openedKey, s.id);
     card.classList.add('opened');
-    card.querySelector('p').textContent = 'Déjà ouverte — clique pour revoir';
-    openModal({ glyph: '🎁', bodyHtml: `<h3 style="margin-bottom:12px;">${escapeHtml(s.titre)}</h3>${s.contenu.map(renderBlock).join('')}` });
+    card.querySelector('p').textContent = 'Déjà ouverte, clique pour revoir';
+    openModal({ glyph: s.icone || '🎁', bodyHtml: `<h3 style="margin-bottom:12px;">${escapeHtml(s.titre)}</h3>${s.contenu.map(renderBlock).join('')}` });
   });
   return page;
 }
@@ -1190,8 +1054,6 @@ function emptyState(icon, text) {
 /* Certaines routes ont des sous-pages (détail). On les branche ici. */
 const originalOuvrirQuand = renderOuvrirQuandListe;
 ROUTES.find(r => r.path === 'ouvrir-quand').render = (sub) => sub ? renderOuvrirQuandDetail(sub) : originalOuvrirQuand();
-ROUTES.find(r => r.path === 'lettres').render = (sub) => sub ? renderBibliothequeDetail('lettres', sub) : renderBibliotheque('lettres');
-ROUTES.find(r => r.path === 'poemes').render  = (sub) => sub ? renderBibliothequeDetail('poemes', sub)  : renderBibliotheque('poemes');
 
 /* ======================================================================
    6. EFFET D'ÉTOILES (discret, désactivable dans data.js)

@@ -6,7 +6,7 @@ framework, sans dépendance, hébergeable sur **GitHub Pages** ou
 
 ## Comment tout marche, en une phrase
 
-**Tu ne modifies quasiment jamais que `js/data.js`.** Tout le reste
+**Tu ne modifies quasiment jamais que `data.js`.** Tout le reste
 (mise en page, animations, couleurs) est déjà fait. Ajouter une lettre,
 une photo, une phrase de câlin ou un lieu à Lille = ouvrir ce fichier,
 copier une ligne existante, changer le texte, enregistrer.
@@ -51,7 +51,7 @@ une URL que tu peux même protéger par mot de passe (Cloudflare Access) :
 
 ## ⚠️ Une chose à faire absolument avant de mettre en ligne
 
-Ouvre `js/data.js`, section `reglages`, et remplace :
+Ouvre `data.js`, section `reglages`, et remplace :
 
 ```js
 emailContact: "ton-email@exemple.com",
@@ -72,7 +72,7 @@ widget « Une envie » (WhatsApp / SMS).
 
 ## Ajouter du contenu — mode d'emploi rapide
 
-Ouvre `js/data.js`. Chaque section est commentée en français et suit ce
+Ouvre `data.js`. Chaque section est commentée en français et suit ce
 principe : une **liste** entre crochets `[ ]`, où chaque élément est un
 **bloc** entre accolades `{ }`. Pour ajouter un élément, copie un bloc
 existant, colle-le juste après (n'oublie pas la virgule entre deux
@@ -86,9 +86,9 @@ Exemples concrets :
   `premiere-lettre` et donne-lui un nouvel `id` unique (ex: `"lettre-2"`).
 - **Ajouter un lieu à Lille** → section `lieuxLille`, modèle fourni en
   commentaire juste en dessous.
-- **Ajouter une photo** → dépose le fichier image dans
-  `assets/images/`, puis ajoute son chemin dans la section `photos`
-  (ex: `"assets/images/plage.jpg",`).
+- **Ajouter une photo** → dépose le fichier image directement dans le
+  dossier du site (à côté de `index.html`), puis ajoute son nom dans
+  la section `photos` (ex: `"plage.jpg",`).
 - **Changer la date du compteur** → section `compteurs`, modifie la
   valeur `date` au format `"AAAA-MM-JJTHH:MM:00"`.
 - **Changer le mot du jour** → section `motDuJour`, modifie `mot` et
@@ -101,25 +101,28 @@ n'est jamais cassé de façon permanente.
 
 ## Où mettre les photos, vidéos et musiques
 
-```
-assets/images/   → toutes tes photos (.jpg, .png, .webp)
-assets/videos/   → tes vidéos en .mp4
-assets/music/    → messages vocaux, musique d'ambiance (.mp3)
-```
+Tout est volontairement **à plat** : dépose tes photos (.jpg, .png),
+vidéos (.mp4) et musiques (.mp3) directement dans le même dossier que
+`index.html`, à côté de tous les autres fichiers du site (pas besoin
+de sous-dossier). Donne-leur un nom simple, sans espace ni accent si
+possible (ex: `arcachon-1.jpg` plutôt que `Arcachon (été).jpg`), puis
+écris juste ce nom dans `data.js`.
 
 Les liens YouTube, Spotify et Google Drive n'ont pas besoin d'être
-téléchargés : `js/data.js` explique en commentaire comment récupérer le
+téléchargés : `data.js` explique en commentaire comment récupérer le
 bon format de lien pour chacun.
 
 ## Fonctionnalités déjà en place
 
-- Page d'accueil : bouton câlin (phrase aléatoire), compteur
-  personnalisable, citation du jour, météo en direct.
-- 15 pages : À ouvrir quand…, Vidéos, Mon vlog, Souvenirs (timeline),
-  Projets (à cocher), Notre Lille (carte interactive + favoris ★),
-  Ma tenue de sport (formulaire), Appartement, Playlist, Films (vu / à
-  voir), Lettres, Poèmes, Photos (avec zoom), Mot du jour, Aujourd'hui
-  (journal), Coin sourire, Nos rêves, Surprises (enveloppes à ouvrir).
+- Page d'accueil : carrousel photo, bouton câlin (phrase aléatoire),
+  compteur personnalisable, citation du jour, météo (Bordeaux + Limoges),
+  widgets "pour rire" (Une envie, Météo, Compteur toilettes), et une
+  vitrine de cartes vers chaque page.
+- 9 pages : À ouvrir quand…, Mon vlog, Nos souvenirs (timeline),
+  Notre Lille (carte interactive + favoris ★), Ma tenue de sport
+  (formulaire), Films & séries (vu / à voir), Le mot du jour,
+  Puissance 4 (en ligne, temps réel), Petites surprises (enveloppes à
+  ouvrir).
 - Recherche globale (icône loupe en haut).
 - Mode clair / sombre (icône soleil/lune, mémorisé automatiquement).
 - Bouton flottant « Je pense à toi » (phrase aléatoire, disponible sur
@@ -133,7 +136,7 @@ bon format de lien pour chacun.
 ## Ce qu'il te reste à faire, si tu veux aller plus loin
 
 - Compléter `phrasesCalin` jusqu'à 300 (une base solide est déjà là).
-- Remplacer les icônes `assets/icons/icon-192.png` / `icon-512.png`
+- Remplacer les icônes `icon-192.png` / `icon-512.png`
   (générées simplement pour l'instant) par un vrai visuel si tu veux.
 - Ajouter tes vraies photos, lettres, lieux, films, etc. au fur et à
   mesure — c'est pensé pour être alimenté petit à petit, pas tout d'un
@@ -202,7 +205,7 @@ pour ce qu'on en fait ici).
    données"**. Choisis une région (n'importe laquelle, ex: Europe),
    puis choisis **"Démarrer en mode test"** (ça suffit largement pour
    un jeu privé à deux). Clique **"Activer"** / **"Terminé"**.
-6. Retourne dans `js/data.js`, section `firebase`, et colle les
+6. Retourne dans `data.js`, section `firebase`, et colle les
    valeurs récupérées à l'étape 4 :
    ```js
    firebase: {
@@ -229,7 +232,7 @@ pour ce qu'on en fait ici).
 **Note sur la confidentialité** : en "mode test", la base Firebase est
 librement accessible à qui connaît son adresse — ce n'est pas grave
 pour un simple jeu entre vous deux, mais évite de partager le contenu
-de `js/data.js` publiquement une fois rempli, et préfère un dépôt
+de `data.js` publiquement une fois rempli, et préfère un dépôt
 GitHub privé + Cloudflare Pages (voir plus haut) si tu veux rester
 tranquille sur ce point. Le mode test Firebase se désactive
 automatiquement après 30 jours si tu ne touches pas aux règles —
