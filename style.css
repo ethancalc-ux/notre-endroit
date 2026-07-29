@@ -1165,3 +1165,14 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
 @media (prefers-reduced-motion: reduce) {
   #scroll-bouquet { transform: scale(1); animation: none !important; }
 }
+
+/* --- Photo de fond, sur toutes les pages ------------------------------------ */
+#site-bg-photo {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+}
+#site-bg-veil {
+  position: absolute; inset: 0;
+  background: var(--cream); opacity: .55;
+}
+:root[data-theme="dark"] #site-bg-veil { background: #241a1e; opacity: .78; }
