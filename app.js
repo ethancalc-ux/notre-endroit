@@ -399,10 +399,10 @@ function renderAccueil() {
       <p id="quote-of-day"></p>
     </div>
 
-    <div class="section card weather-organic organic-card tilt-2" style="max-width:520px;margin:var(--space-4) auto 0;text-align:left;" id="weather-box">
+    <div class="section card weather-organic organic-card tilt-2" style="max-width:520px;margin:var(--space-6) auto 0;text-align:left;" id="weather-box">
       <div style="color:var(--ink-soft);">Chargement de la météo…</div>
     </div>
-    <p class="weather-note" style="max-width:520px;margin:0 auto;">Peu importe la météo dehors, j'espère qu'il fera toujours un peu plus beau dans ton cœur.</p>
+    <p class="weather-note" style="max-width:520px;margin:0 auto var(--space-7);">Peu importe la météo dehors, j'espère qu'il fera toujours un peu plus beau dans ton cœur.</p>
 
     <div class="section">
       <div class="section-title" style="justify-content:center;"><h2 class="univers-titre">Tout notre petit univers <span style="color:var(--gold);">♥</span></h2></div>
