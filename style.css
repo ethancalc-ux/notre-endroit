@@ -914,12 +914,12 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
   position: relative; display: block; overflow: hidden;
   background: color-mix(in srgb, var(--cream) 88%, transparent);
   backdrop-filter: blur(6px);
-  border: 1px solid var(--blush); border-radius: var(--radius-lg);
+  border: 1px solid var(--blush); border-radius: 36px 10px 36px 10px;
   padding: var(--space-4); min-height: 240px;
   box-shadow: var(--shadow-md);
-  transition: transform var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
+  transition: transform var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft), border-radius var(--dur-fast) var(--ease-soft);
 }
-.priority-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+.priority-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-radius: 20px; }
 .priority-card h3 { font-size: 1.3rem; margin-bottom: 4px; }
 .priority-card p { color: var(--ink-soft); font-size: 0.9rem; margin-bottom: 10px; }
 .priority-badge {
@@ -974,27 +974,16 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
 .priority-card:hover .jeux-roue { transform: rotate(120deg); }
 .jeux-couronne { color: var(--gold); }
 
-/* Grille secondaire (7 autres widgets) */
+/* Grille secondaire (7 autres widgets) — même grille organique que le reste */
 #univers-secondaire {
-  display: flex; flex-wrap: wrap; gap: var(--space-3);
-  justify-content: center; max-width: 960px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4); max-width: 980px; margin: 0 auto;
 }
-.mini-card {
-  flex: 1 1 200px; max-width: 260px;
-  display: block; text-align: left;
-  background: var(--surface); border-radius: var(--radius-md);
-  border: 1px solid var(--border-soft); box-shadow: var(--shadow-sm);
-  padding: var(--space-4);
-  transition: transform var(--dur-fast) var(--ease-soft), box-shadow var(--dur-fast) var(--ease-soft);
-}
-.mini-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
 .mini-card-icon {
   width: 48px; height: 48px; display: grid; place-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 .mini-card-icon svg { width: 40px; height: 40px; }
-.mini-card h3 { font-size: 1.02rem; margin-bottom: 4px; }
-.mini-card p { font-size: 0.85rem; color: var(--ink-soft); margin: 0; }
 
 @media (max-width: 700px) {
   .univers-priority-row { grid-template-columns: 1fr; }
