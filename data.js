@@ -660,6 +660,8 @@ const SITE_DATA = {
     // Tu préfères, version couple : des paires de choix
     // Qui connaît le mieux l'autre : questions ouvertes, 5 tirées au sort
     // Devine ma réponse : une personne répond en secret, l'autre devine
+    // Bataille de compliments : 5 catégories, tour par tour
+    bataille: ["Physique", "Personnalité", "Souvenir", "Fierté", "Futur"],
     devineReponse: [
       "Quel dessert choisirais-je maintenant ?",
       "Quelle couleur porterais-je pour un rendez-vous ?",
