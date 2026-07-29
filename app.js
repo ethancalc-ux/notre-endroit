@@ -487,6 +487,41 @@ function renderAccueil() {
    la plateforme pour éviter que le message n'apparaisse pas prérempli. */
 function isIOS() { return /iPhone|iPad|iPod/i.test(navigator.userAgent); }
 
+/* ======================================================================
+   JEUX EN LIGNE — infrastructure partagée par les mini-jeux qui ont
+   besoin de synchroniser deux appareils (réutilise la même base Firebase
+   que le Puissance 4).
+   ====================================================================== */
+
+// Ouvre (ou réutilise) la connexion Firebase. Renvoie null si la config
+// n'a pas encore été faite (voir README, section Puissance 4).
+function firebaseDB() {
+  if (!D.firebase?.apiKey) return null;
+  if (!window._fbApp) window._fbApp = firebase.initializeApp(D.firebase);
+  return firebase.database();
+}
+function jeuxCle() { return D.puissance4Cle || 'notre-puissance4'; }
+
+// Identité partagée : "ethan" ou "lorvencia", choisie une fois par
+// appareil puis mémorisée. Réutilisée par tous les jeux à deux.
+function getIdentite(callback) {
+  const stockee = Store.get('mon-identite', null);
+  if (stockee) return callback(stockee);
+  openModal({
+    glyph: '🤍',
+    bodyHtml: `
+      <h3 style="margin-bottom:14px;">Juste pour savoir qui tu es</h3>
+      <p style="margin-bottom:16px;color:var(--ink-soft);font-size:.9rem;">Cette réponse est mémorisée sur cet appareil, tu n'auras plus à la redonner.</p>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="btn btn-primary btn-sm" id="id-ethan">Je suis Ethan</button>
+        <button class="btn btn-primary btn-sm" id="id-lorvencia">Je suis Lorvencia</button>
+      </div>`,
+  });
+  $('#id-ethan')?.addEventListener('click', () => { Store.set('mon-identite', 'ethan'); closeModal(); callback('ethan'); });
+  $('#id-lorvencia')?.addEventListener('click', () => { Store.set('mon-identite', 'lorvencia'); closeModal(); callback('lorvencia'); });
+}
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+
 function openEnvieWidget() {
   const { telephoneContact, emailContact } = D.reglages;
   const presets = D.envies;
@@ -1079,6 +1114,7 @@ function renderPuissance4() {
    NOS PETITS JEUX
    ====================================================================== */
 const JEUX_LISTE = [
+  { id: 'question-du-jour', icone: '💬', titre: 'Question du jour',           texte: 'Une par jour, révélée à deux' },
   { id: 'roue',          icone: '🎡', titre: 'La roue de nos envies',       texte: 'Fais tourner, on suit ce qui sort' },
   { id: 'trone',         icone: '👑', titre: "Le Trône d'Or",               texte: 'Pour rire, sans se prendre au sérieux' },
   { id: 'compatibilite', icone: '💞', titre: 'Notre compatibilité du jour', texte: '100% pour rire, amour 100% vrai' },
@@ -1100,6 +1136,7 @@ function renderJeuxListe() {
 }
 
 function renderJeuxDetail(sub) {
+  if (sub === 'question-du-jour') return renderJeuQuestionDuJour();
   if (sub === 'roue') return renderJeuRoue();
   if (sub === 'trone') return renderJeuTrone();
   if (sub === 'compatibilite') return renderJeuCompatibilite();
@@ -1108,6 +1145,82 @@ function renderJeuxDetail(sub) {
 
 function jeuxBackLink() {
   return `<a href="#/jeux" class="btn btn-ghost btn-sm" style="margin-bottom:24px;">← Retour aux jeux</a>`;
+}
+
+/* --- Jeu : Question du jour (synchronisé via Firebase) --------------------- */
+function renderJeuQuestionDuJour() {
+  const page = el(`<div class="page">
+    ${jeuxBackLink()}
+    <div class="page-header"><span class="eyebrow">💬</span><h1>Question du jour</h1></div>
+    <div id="qdj-root" style="max-width:480px;margin:0 auto;text-align:center;"></div>
+  </div>`);
+  const root = page.querySelector('#qdj-root');
+  const db = firebaseDB();
+  if (!db) {
+    root.innerHTML = emptyState('💬', "Il manque la configuration Firebase (déjà utilisée pour le Puissance 4) pour activer ce jeu, regarde le README.");
+    return page;
+  }
+
+  const jour = todayISO();
+  const questions = D.jeux.questionsDuJour;
+  const index = Math.abs(Array.from(jour).reduce((h, c) => h * 31 + c.charCodeAt(0), 0)) % questions.length;
+  const question = questions[index];
+  const ref = db.ref(`${jeuxCle()}/questionJour/${jour}`);
+
+  root.innerHTML = `<p style="color:var(--ink-soft);">Connexion…</p>`;
+
+  getIdentite(moi => {
+    const autre = moi === 'ethan' ? 'lorvencia' : 'ethan';
+
+    function paint(val) {
+      val = val || {};
+      const reponses = val.reponses || {};
+      const coeurs = val.coeurs || {};
+      const mesReponses = reponses[moi];
+      const sesReponses = reponses[autre];
+
+      if (!mesReponses) {
+        root.innerHTML = `
+          <div class="card">
+            <p style="font-weight:600;margin-bottom:14px;">${escapeHtml(question)}</p>
+            <textarea id="qdj-texte" rows="3" style="width:100%;border-radius:14px;border:1px solid var(--border-soft);padding:12px;font-family:var(--font-body);"></textarea>
+            <button class="btn btn-primary btn-sm" id="qdj-envoyer" style="margin-top:12px;">Envoyer ma réponse</button>
+          </div>`;
+        root.querySelector('#qdj-envoyer').addEventListener('click', () => {
+          const texte = root.querySelector('#qdj-texte').value.trim();
+          if (!texte) return;
+          ref.child(`reponses/${moi}`).set(texte);
+        });
+      } else if (!sesReponses) {
+        root.innerHTML = `
+          <div class="card">
+            <p style="font-weight:600;margin-bottom:10px;">${escapeHtml(question)}</p>
+            <p style="color:var(--ink-soft);font-size:.9rem;">Ta réponse est envoyée. On attend que l'autre réponde aussi pour tout révéler 🤍</p>
+          </div>`;
+      } else {
+        root.innerHTML = `
+          <div class="card fade-rise">
+            <p style="font-weight:600;margin-bottom:14px;">${escapeHtml(question)}</p>
+            <div class="qdj-reponse">
+              <div class="qdj-nom">Toi</div>
+              <p>${escapeHtml(mesReponses)}</p>
+            </div>
+            <div class="qdj-reponse">
+              <div class="qdj-nom">${autre === 'ethan' ? 'Ethan' : 'Lorvencia'}
+                <button class="fav-btn ${coeurs[autre] ? 'active' : ''}" id="qdj-coeur">★</button>
+              </div>
+              <p>${escapeHtml(sesReponses)}</p>
+            </div>
+          </div>`;
+        root.querySelector('#qdj-coeur')?.addEventListener('click', () => {
+          ref.child(`coeurs/${autre}`).set(!coeurs[autre]);
+        });
+      }
+    }
+    ref.on('value', snap => paint(snap.val()));
+  });
+
+  return page;
 }
 
 /* --- Jeu 1 : la roue de nos envies ---------------------------------------- */
