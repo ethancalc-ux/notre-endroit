@@ -999,3 +999,71 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
 @media (max-width: 700px) {
   .univers-priority-row { grid-template-columns: 1fr; }
 }
+
+/* ======================================================================
+   FORMES ORGANIQUES — signature visuelle du site : jamais de simple
+   rectangle à coins uniformément arrondis. Coins asymétriques, légère
+   rotation façon photos posées sur une table, qui se redressent au
+   survol.
+   ====================================================================== */
+.organic-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4); max-width: 980px; margin: 0 auto;
+}
+.organic-card {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 12px; padding: var(--space-4) var(--space-3);
+  background: linear-gradient(155deg, var(--surface), var(--cream-2));
+  border: 1px solid var(--blush);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-med) var(--ease-soft), box-shadow var(--dur-med) var(--ease-soft), border-radius var(--dur-med) var(--ease-soft);
+}
+.organic-card h3 { font-size: 1rem; margin: 0; }
+.organic-icon { width: 52px; height: 52px; }
+.organic-icon svg { width: 100%; height: 100%; }
+
+.tilt-0 { border-radius: 34px 10px 34px 10px; transform: rotate(-1.4deg); }
+.tilt-1 { border-radius: 10px 34px 10px 34px; transform: rotate(1.2deg); }
+.tilt-2 { border-radius: 34px 34px 10px 34px; transform: rotate(-0.8deg); }
+.tilt-3 { border-radius: 10px 34px 34px 10px; transform: rotate(1.6deg); }
+.organic-card:hover {
+  transform: rotate(0deg) translateY(-6px) scale(1.02);
+  box-shadow: var(--shadow-lg);
+  border-radius: 22px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tilt-0, .tilt-1, .tilt-2, .tilt-3 { transform: none; }
+}
+
+/* --- Carte Uber Eats (organique, autonome) --------------------------------- */
+.uber-card {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  max-width: 420px; margin: var(--space-6) auto 0; padding: 16px 24px;
+  background: linear-gradient(135deg, var(--bordeaux), var(--bordeaux-dark));
+  color: var(--cream); font-weight: 700; font-size: 0.95rem;
+  border-radius: 30px 12px 30px 12px; cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--dur-fast) var(--ease-soft), border-radius var(--dur-fast) var(--ease-soft);
+}
+.uber-card:hover { transform: translateY(-3px); border-radius: 16px; }
+.uber-card:active { transform: translateY(0) scale(.98); }
+.uber-icon { width: 30px; height: 30px; flex-shrink: 0; }
+.uber-icon svg { width: 100%; height: 100%; }
+
+/* --- Citation du jour, façon bulle de parole -------------------------------- */
+.speech-quote {
+  position: relative;
+  background: linear-gradient(155deg, var(--blush-soft), var(--cream-2));
+  border: 1px solid var(--blush);
+  border-radius: 30px 30px 30px 6px;
+  padding: var(--space-5);
+  text-align: center;
+}
+.speech-quote p { font-family: var(--font-display); font-style: italic; font-size: 1.25rem; color: var(--bordeaux-dark); margin: 0; }
+
+/* --- Météo, carte organique -------------------------------------------------- */
+.weather-organic {
+  border-radius: 12px 30px 12px 30px !important;
+  border: 1px solid var(--blush) !important;
+}
