@@ -889,7 +889,7 @@ function c4CheckWinner(grille) {
 }
 
 function renderPuissance4() {
-  const fbConf = D.reglages.firebase;
+  const fbConf = D.firebase;
   const page = el(`<div class="page">
     <div class="page-header"><span class="eyebrow">Pour jouer, tous les deux</span><h1>Puissance 4</h1></div>
     <div id="c4-root" style="max-width:420px;margin:0 auto;text-align:center;"></div>
@@ -906,7 +906,7 @@ function renderPuissance4() {
     window._fbApp = firebase.initializeApp(fbConf);
   }
   const db = firebase.database();
-  const cle = D.reglages.puissance4Cle || 'notre-puissance4';
+  const cle = D.puissance4Cle || 'notre-puissance4';
   const partieRef = db.ref(`${cle}/partie`);
 
   // Identifiant propre à cet appareil (mémorisé), pour savoir "qui est qui"
