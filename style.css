@@ -1156,3 +1156,23 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
   color: var(--blush); opacity: .55; transform: rotate(-8deg);
   pointer-events: none;
 }
+
+/* --- Bouquet décoratif en arrière-plan (illustration SVG plate) ------------- */
+#scroll-bouquet {
+  position: absolute; bottom: -10px; left: -10px; width: 220px; height: 220px;
+  opacity: .5; pointer-events: none;
+  transform: scale(calc(0.88 + var(--scroll-progress, 0) * 0.22));
+  transform-origin: bottom left;
+  transition: transform 0.2s linear;
+  animation: bouquetSway 18s ease-in-out infinite;
+}
+@keyframes bouquetSway {
+  0%, 100% { rotate: 0deg; }
+  50% { rotate: 1.5deg; }
+}
+@media (max-width: 640px) {
+  #scroll-bouquet { width: 150px; height: 150px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #scroll-bouquet { transform: scale(1); animation: none !important; }
+}
