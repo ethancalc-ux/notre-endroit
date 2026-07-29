@@ -883,3 +883,13 @@ main#app { padding-top: calc(var(--header-h) + env(safe-area-inset-top)); }
 @keyframes confettiFall {
   to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
 }
+
+/* --- Question du jour : cartes de réponse ----------------------------------- */
+.qdj-reponse {
+  text-align: left; background: var(--surface-alt); border-radius: var(--radius-sm);
+  padding: 12px 14px; margin-top: 10px;
+}
+.qdj-nom {
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--gold); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;
+}
