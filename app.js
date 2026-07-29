@@ -329,6 +329,20 @@ function mountCarousel(page) {
   });
 }
 
+/* --- Bento des widgets : petites illustrations SVG réutilisées partout ----- */
+const ICONES = {
+  vlog: `<svg viewBox="0 0 48 48" fill="none"><rect x="6" y="14" width="26" height="20" rx="5" fill="var(--blush-soft)"/><path d="M32 20l9-5v18l-9-5" fill="var(--gold-soft)"/><polygon points="16,20 16,28 23,24" fill="var(--bordeaux)"/></svg>`,
+  lille: `<svg viewBox="0 0 48 48" fill="none"><path d="M24 6c-7 0-12 5.5-12 12 0 9 12 24 12 24s12-15 12-24c0-6.5-5-12-12-12z" fill="var(--blush)"/><circle cx="24" cy="18" r="5" fill="var(--surface)"/></svg>`,
+  'tenue-sport': `<svg viewBox="0 0 48 48" fill="none"><path d="M8 14l8-4 8 4 8-4 8 4-3 8-5-2v14H16V20l-5 2z" fill="var(--gold-soft)"/></svg>`,
+  youtube: `<svg viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="36" height="24" rx="7" fill="var(--blush-soft)"/><polygon points="20,17 20,27 30,22" fill="var(--bordeaux)"/></svg>`,
+  'mot-du-jour': `<svg viewBox="0 0 48 48" fill="none"><path d="M14 34l16-16 4 4-16 16H14v-4z" fill="var(--gold-soft)"/><path d="M30 10l3 3-4 4-3-3z" fill="var(--bordeaux)"/><circle cx="12" cy="12" r="2" fill="var(--gold)"/></svg>`,
+  puissance4: `<svg viewBox="0 0 48 48" fill="none"><rect x="6" y="6" width="36" height="36" rx="8" fill="var(--blush-soft)"/>
+    <circle cx="15" cy="15" r="4" fill="var(--surface)"/><circle cx="24" cy="15" r="4" fill="var(--bordeaux)"/><circle cx="33" cy="15" r="4" fill="var(--surface)"/>
+    <circle cx="15" cy="24" r="4" fill="var(--gold)"/><circle cx="24" cy="24" r="4" fill="var(--surface)"/><circle cx="33" cy="24" r="4" fill="var(--bordeaux)"/>
+    <circle cx="15" cy="33" r="4" fill="var(--surface)"/><circle cx="24" cy="33" r="4" fill="var(--gold)"/><circle cx="33" cy="33" r="4" fill="var(--surface)"/></svg>`,
+  surprises: `<svg viewBox="0 0 48 48" fill="none"><rect x="8" y="20" width="32" height="20" rx="4" fill="var(--blush-soft)"/><rect x="6" y="14" width="36" height="8" rx="3" fill="var(--gold-soft)"/><rect x="21" y="14" width="6" height="26" fill="var(--bordeaux)"/><path d="M18 14c-4 0-6-3-4-6s7-1 6 6zM30 14c4 0 6-3 4-6s-7-1-6 6z" fill="var(--bordeaux)"/></svg>`,
+};
+
 /* --- Page d'accueil ------------------------------------------------------*/
 function renderAccueil() {
   const page = el(`<div class="page home-hero">
@@ -445,19 +459,6 @@ function renderAccueil() {
   });
 
   // --- Bento des widgets : 2 grandes cartes illustrées + le reste en grille ---
-  const ICONES = {
-    vlog: `<svg viewBox="0 0 48 48" fill="none"><rect x="6" y="14" width="26" height="20" rx="5" fill="var(--blush-soft)"/><path d="M32 20l9-5v18l-9-5" fill="var(--gold-soft)"/><polygon points="16,20 16,28 23,24" fill="var(--bordeaux)"/></svg>`,
-    lille: `<svg viewBox="0 0 48 48" fill="none"><path d="M24 6c-7 0-12 5.5-12 12 0 9 12 24 12 24s12-15 12-24c0-6.5-5-12-12-12z" fill="var(--blush)"/><circle cx="24" cy="18" r="5" fill="var(--surface)"/></svg>`,
-    'tenue-sport': `<svg viewBox="0 0 48 48" fill="none"><path d="M8 14l8-4 8 4 8-4 8 4-3 8-5-2v14H16V20l-5 2z" fill="var(--gold-soft)"/></svg>`,
-    youtube: `<svg viewBox="0 0 48 48" fill="none"><rect x="6" y="10" width="36" height="24" rx="7" fill="var(--blush-soft)"/><polygon points="20,17 20,27 30,22" fill="var(--bordeaux)"/></svg>`,
-    'mot-du-jour': `<svg viewBox="0 0 48 48" fill="none"><path d="M14 34l16-16 4 4-16 16H14v-4z" fill="var(--gold-soft)"/><path d="M30 10l3 3-4 4-3-3z" fill="var(--bordeaux)"/><circle cx="12" cy="12" r="2" fill="var(--gold)"/></svg>`,
-    puissance4: `<svg viewBox="0 0 48 48" fill="none"><rect x="6" y="6" width="36" height="36" rx="8" fill="var(--blush-soft)"/>
-      <circle cx="15" cy="15" r="4" fill="var(--surface)"/><circle cx="24" cy="15" r="4" fill="var(--bordeaux)"/><circle cx="33" cy="15" r="4" fill="var(--surface)"/>
-      <circle cx="15" cy="24" r="4" fill="var(--gold)"/><circle cx="24" cy="24" r="4" fill="var(--surface)"/><circle cx="33" cy="24" r="4" fill="var(--bordeaux)"/>
-      <circle cx="15" cy="33" r="4" fill="var(--surface)"/><circle cx="24" cy="33" r="4" fill="var(--gold)"/><circle cx="33" cy="33" r="4" fill="var(--surface)"/></svg>`,
-    surprises: `<svg viewBox="0 0 48 48" fill="none"><rect x="8" y="20" width="32" height="20" rx="4" fill="var(--blush-soft)"/><rect x="6" y="14" width="36" height="8" rx="3" fill="var(--gold-soft)"/><rect x="21" y="14" width="6" height="26" fill="var(--bordeaux)"/><path d="M18 14c-4 0-6-3-4-6s7-1 6 6zM30 14c4 0 6-3 4-6s-7-1-6 6z" fill="var(--bordeaux)"/></svg>`,
-  };
-
   const priorites = [
     { path: 'ouvrir-quand', badge: 'PRIORITÉ 1', titre: 'À ouvrir quand…', texte: 'Des mots pour chaque moment', tag: `${D.ouvrirQuand.length} messages à découvrir`, illus: 'enveloppe' },
     { path: 'jeux',         badge: 'PRIORITÉ 2', titre: 'Nos petits jeux',  texte: 'Quiz, défis et mini-jeux à deux', tag: `${JEUX_LISTE.length} jeux`, illus: 'jeux' },
@@ -707,8 +708,8 @@ function renderOuvrirQuandDetail(id) {
 /* --- Mon vlog (épisodes vidéo/photo du jour, du plus récent au plus ancien) --*/
 function renderVlog() {
   const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Un bout de ma journée, pour toi</span><h1>Mon vlog</h1><p>Un petit épisode déposé de temps en temps, pour que tu te sentes un peu avec moi.</p></div>
-    <div class="grid" id="vlog-grid"></div>
+    <div class="page-header"><span class="page-header-icon icon-pulse">${ICONES.vlog}</span><span class="eyebrow">Un bout de ma journée, pour toi</span><h1>Mon vlog</h1><p>Un petit épisode déposé de temps en temps, pour que tu te sentes un peu avec moi.</p></div>
+    <div class="organic-grid" id="vlog-grid"></div>
   </div>`);
   const grid = page.querySelector('#vlog-grid');
   const sorted = [...D.vlog].sort((a, b) => b.date.localeCompare(a.date));
@@ -719,8 +720,8 @@ function renderVlog() {
   }
 
   grid.innerHTML = sorted.map((v, i) => `
-    <button class="card card-link" style="text-align:left;width:100%;border:none;" data-i="${sorted.indexOf(v)}">
-      <div class="card-cover">${v.miniature ? `<img src="${v.miniature}" alt="">` : (v.type === 'photo' && v.src ? `<img src="${v.src}" alt="">` : '📹')}</div>
+    <button class="organic-card card-link tilt-${i % 4}" style="text-align:left;width:100%;border:none;align-items:stretch;" data-i="${sorted.indexOf(v)}">
+      <div class="card-cover" style="position:relative;">${v.miniature ? `<img src="${v.miniature}" alt="">` : (v.type === 'photo' && v.src ? `<img src="${v.src}" alt="">` : `<span class="mini-play-badge icon-pulse">▶</span>`)}</div>
       <div class="letter-date">${formatDateLong(v.date)}</div>
       <h3>${escapeHtml(v.titre)}</h3>
       <p>${escapeHtml(v.texte || '')}</p>
@@ -745,11 +746,11 @@ function renderVlog() {
 /* --- Notre Lille -----------------------------------------------------------*/
 function renderLille() {
   const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Notre prochain chapitre</span><h1>Notre Lille</h1><p>Les lieux qu'on veut découvrir, un par un.</p></div>
+    <div class="page-header"><span class="page-header-icon icon-pulse">${ICONES.lille}</span><span class="eyebrow">Notre prochain chapitre</span><h1>Notre Lille</h1><p>Les lieux qu'on veut découvrir, un par un.</p></div>
     <div class="map-status" id="map-status">Chargement de la carte…</div>
     <div class="leaflet-map" id="lille-map"></div>
     <div class="lib-filter" id="lille-filter"></div>
-    <div class="grid" id="lille-grid"></div>
+    <div class="organic-grid" id="lille-grid"></div>
   </div>`);
 
   const cats = ['Tous', ...new Set(D.lieuxLille.map(l => l.categorie))];
@@ -760,10 +761,10 @@ function renderLille() {
   function paint(filter = 'Tous') {
     const grid = page.querySelector('#lille-grid');
     const list = filter === 'Tous' ? D.lieuxLille : D.lieuxLille.filter(l => l.categorie === filter);
-    grid.innerHTML = list.length ? list.map(l => `
-      <div class="card place-card" data-place="${l.id}">
+    grid.innerHTML = list.length ? list.map((l, i) => `
+      <div class="organic-card tilt-${i % 4}" style="align-items:stretch;text-align:left;" data-place="${l.id}">
         ${l.topPersonnel ? `<span class="badge-top">🏆 Top ${l.topPersonnel}</span>` : ''}
-        <div class="card-cover">${l.image ? `<img src="${l.image}" alt="">` : '📍'}</div>
+        <div class="card-cover">${l.image ? `<img src="${l.image}" alt="">` : `<span class="mini-pin-badge icon-pulse">${ICONES.lille}</span>`}</div>
         <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;">
           <h3>${escapeHtml(l.nom)}</h3>
           <button class="fav-btn ${Store.has(favKey, l.id) ? 'active' : ''}" data-fav="${l.id}" aria-label="Favori">★</button>
@@ -874,7 +875,7 @@ function mountLilleMap(container, statusEl) {
 function renderTenueSport() {
   const conf = D.tenueSport;
   const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Un petit service</span><h1>Ma tenue de sport</h1>
+    <div class="page-header"><span class="page-header-icon icon-pulse">${ICONES['tenue-sport']}</span><span class="eyebrow">Un petit service</span><h1>Ma tenue de sport</h1>
       <p>${escapeHtml(conf.intro)}</p>
     </div>
 
@@ -979,15 +980,15 @@ function renderYoutube() {
   const page = el(`<div class="page">
     <div class="page-header">
       <span class="eyebrow">Nos vidéos</span>
-      <h1><span class="youtube-badge" aria-hidden="true">▶</span> YouTube</h1>
+      <h1><span class="youtube-badge icon-pulse" aria-hidden="true">▶</span> YouTube</h1>
       <p>Clique une miniature, ça s'ouvre directement.</p>
     </div>
-    <div class="grid" id="youtube-grid"></div>
+    <div class="organic-grid" id="youtube-grid"></div>
   </div>`);
   const grid = page.querySelector('#youtube-grid');
   const videos = D.youtube || [];
   grid.innerHTML = videos.length ? videos.map((v, i) => `
-    <button class="card card-link youtube-card" style="text-align:left;width:100%;border:none;" data-i="${i}">
+    <button class="organic-card card-link youtube-card tilt-${i % 4}" style="text-align:left;width:100%;border:none;align-items:stretch;" data-i="${i}">
       <div class="card-cover youtube-thumb">
         <img src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy">
         <span class="youtube-play" aria-hidden="true">▶</span>
@@ -1009,8 +1010,8 @@ function renderYoutube() {
 function renderMotDuJour() {
   const m = D.motDuJour;
   return el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">${formatDateLong(m.date)}</span><h1>Le mot du jour</h1></div>
-    <div class="quote-block" style="max-width:560px;margin:0 auto;">
+    <div class="page-header"><span class="page-header-icon icon-sparkle">${ICONES['mot-du-jour']}</span><span class="eyebrow">${formatDateLong(m.date)}</span><h1>Le mot du jour</h1></div>
+    <div class="speech-quote" style="max-width:560px;margin:0 auto;">
       <div style="font-family:var(--font-display);font-size:2.4rem;color:var(--gold);margin-bottom:8px;">${escapeHtml(m.mot)}</div>
       <p style="font-style:normal;">${escapeHtml(m.texte)}</p>
     </div>
@@ -1046,7 +1047,7 @@ function c4CheckWinner(grille) {
 function renderPuissance4() {
   const fbConf = D.firebase;
   const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Pour jouer, tous les deux</span><h1>Puissance 4</h1></div>
+    <div class="page-header"><span class="page-header-icon">${ICONES.puissance4}</span><span class="eyebrow">Pour jouer, tous les deux</span><h1>Puissance 4</h1></div>
     <div id="c4-root" style="max-width:420px;margin:0 auto;text-align:center;"></div>
   </div>`);
   const root = page.querySelector('#c4-root');
@@ -1198,11 +1199,11 @@ function renderJeuxListe() {
     <div style="text-align:center;margin-bottom:20px;">
       <label class="trone-son-toggle"><input type="checkbox" id="jeux-son"> 🔈 Activer les petits sons (pour tous les jeux)</label>
     </div>
-    <div class="grid" id="jeux-grid"></div>
+    <div class="organic-grid" id="jeux-grid"></div>
     <p style="text-align:center;color:var(--ink-soft);font-size:.85rem;margin-top:24px;">D'autres jeux (à deux, en direct) arrivent bientôt ✨</p>
   </div>`);
-  page.querySelector('#jeux-grid').innerHTML = JEUX_LISTE.map(j => `
-    <a class="card envelope-card card-link" href="#/jeux/${j.id}">
+  page.querySelector('#jeux-grid').innerHTML = JEUX_LISTE.map((j, i) => `
+    <a class="organic-card card-link tilt-${i % 4}" href="#/jeux/${j.id}">
       <span class="glyph">${j.icone}</span>
       <h3>${escapeHtml(j.titre)}</h3>
       <p>${escapeHtml(j.texte)}</p>
@@ -1951,25 +1952,29 @@ function renderJeuCompatibilite() {
 
 function renderSurprises() {
   const page = el(`<div class="page">
-    <div class="page-header"><span class="eyebrow">Chut, c'est une surprise</span><h1>Les petites surprises</h1></div>
-    <div class="grid" id="surprises-grid"></div>
+    <div class="page-header"><span class="page-header-icon">${ICONES.surprises}</span><span class="eyebrow">Chut, c'est une surprise</span><h1>Les petites surprises</h1></div>
+    <div class="organic-grid" id="surprises-grid"></div>
   </div>`);
   const openedKey = 'surprises-ouvertes';
   const grid = page.querySelector('#surprises-grid');
-  grid.innerHTML = D.surprises.length ? D.surprises.map(s => `
-    <div class="card envelope ${Store.has(openedKey, s.id) ? 'opened' : ''}" data-id="${s.id}">
-      <span class="flap">${s.icone || '✉️'}</span>
+  grid.innerHTML = D.surprises.length ? D.surprises.map((s, i) => `
+    <div class="organic-card gift-box tilt-${i % 4} ${Store.has(openedKey, s.id) ? 'opened' : ''}" data-id="${s.id}">
+      <span class="gift-icon">${s.icone ? `<span style="font-size:1.8rem;">${s.icone}</span>` : ICONES.surprises}</span>
       <h3>${escapeHtml(s.titre)}</h3>
       <p style="font-size:.85rem;">${Store.has(openedKey, s.id) ? 'Déjà ouverte, clique pour revoir' : 'Clique pour ouvrir'}</p>
     </div>`).join('') : emptyState('🎁', "Pas encore de surprise, ajoute-en dans js/data.js, section « surprises ».");
 
   grid.addEventListener('click', e => {
-    const card = e.target.closest('.envelope'); if (!card) return;
+    const card = e.target.closest('.gift-box'); if (!card) return;
     const s = D.surprises.find(x => x.id === card.dataset.id);
-    Store.toggleInSet(openedKey, s.id);
-    card.classList.add('opened');
-    card.querySelector('p').textContent = 'Déjà ouverte, clique pour revoir';
-    openModal({ glyph: s.icone || '🎁', bodyHtml: `<h3 style="margin-bottom:12px;">${escapeHtml(s.titre)}</h3>${s.contenu.map(renderBlock).join('')}` });
+    card.classList.add('opening');
+    setTimeout(() => {
+      Store.toggleInSet(openedKey, s.id);
+      card.classList.add('opened');
+      card.classList.remove('opening');
+      card.querySelector('p').textContent = 'Déjà ouverte, clique pour revoir';
+      openModal({ glyph: s.icone || '🎁', bodyHtml: `<h3 style="margin-bottom:12px;">${escapeHtml(s.titre)}</h3>${s.contenu.map(renderBlock).join('')}` });
+    }, window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 420);
   });
   return page;
 }
