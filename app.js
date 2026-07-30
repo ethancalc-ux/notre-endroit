@@ -263,18 +263,42 @@ let counterTimer = null;
 function mountCounter(container) {
   clearInterval(counterTimer);
   const reference = new Date(D.derniereRencontre).getTime();
+  const counterEl = container.querySelector('.counter');
+
+  // Structure construite une seule fois : on ne touche plus au DOM
+  // ensuite, seulement au texte des chiffres qui changent réellement.
+  counterEl.innerHTML = `
+    <div class="counter-unit"><div class="num" data-unit="j">0</div><div class="label">jours</div></div>
+    <div class="counter-unit"><div class="num" data-unit="h">0</div><div class="label">heures</div></div>
+    <div class="counter-unit"><div class="num" data-unit="m">0</div><div class="label">min</div></div>
+    <div class="counter-unit"><div class="num" data-unit="s">0</div><div class="label">sec</div></div>`;
+  const numEls = {
+    j: counterEl.querySelector('[data-unit="j"]'),
+    h: counterEl.querySelector('[data-unit="h"]'),
+    m: counterEl.querySelector('[data-unit="m"]'),
+    s: counterEl.querySelector('[data-unit="s"]'),
+  };
+  const precedent = { j: null, h: null, m: null, s: null };
+  const reduitMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function majChiffre(unite, valeur) {
+    if (precedent[unite] === valeur) return; // rien n'a changé, on ne touche à rien
+    precedent[unite] = valeur;
+    const el = numEls[unite];
+    el.textContent = valeur;
+    if (!reduitMotion) {
+      el.classList.remove('num-change');
+      void el.offsetWidth; // relance l'animation même si la classe était déjà là
+      el.classList.add('num-change');
+    }
+  }
 
   function tick() {
     const diff = Math.max(0, Date.now() - reference); // jamais négatif
-    const j = Math.floor(diff / 86400000);
-    const h = Math.floor((diff % 86400000) / 3600000);
-    const m = Math.floor((diff % 3600000) / 60000);
-    const s = Math.floor((diff % 60000) / 1000);
-    container.querySelector('.counter').innerHTML = `
-      <div class="counter-unit"><div class="num">${j}</div><div class="label">jours</div></div>
-      <div class="counter-unit"><div class="num">${h}</div><div class="label">heures</div></div>
-      <div class="counter-unit"><div class="num">${m}</div><div class="label">min</div></div>
-      <div class="counter-unit"><div class="num">${s}</div><div class="label">sec</div></div>`;
+    majChiffre('j', Math.floor(diff / 86400000));
+    majChiffre('h', Math.floor((diff % 86400000) / 3600000));
+    majChiffre('m', Math.floor((diff % 3600000) / 60000));
+    majChiffre('s', Math.floor((diff % 60000) / 1000));
   }
   tick();
   counterTimer = setInterval(tick, 1000);
@@ -428,24 +452,43 @@ function renderAccueil() {
   // Widget distance
   const dist = D.distanceCouple;
   const dodo = estNuit() ? ' avatar-endormi' : '';
+  function messageMoment() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return "Une nouvelle journée commence loin de toi.";
+    if (h >= 12 && h < 18) return "Encore quelques heures de moins avant nous.";
+    if (h >= 18 && h < 21) return "La journée se termine, mais je pense toujours à toi.";
+    return "Il est tard, on dort chacun de notre côté, mais toujours tout près dans mon cœur.";
+  }
   page.querySelector('#distance-widget').innerHTML = `
     <div class="duo-card-title">La distance entre nous 🤍</div>
     <div class="distance-row">
       <div class="distance-point distance-point-left">
-        <span class="distance-avatar-wrap${dodo}"><img src="${dist.avatarA}" alt="" class="distance-avatar"></span>
+        <span class="distance-avatar-wrap${dodo}"><img src="${dist.avatarA}" alt="" class="distance-avatar" data-nom="Ethan"></span>
         <span>${escapeHtml(dist.villeA)}</span>
       </div>
       <div class="distance-line">
         <span class="distance-heart">♥</span>
       </div>
       <div class="distance-point distance-point-right">
-        <span class="distance-avatar-wrap${dodo}"><img src="${dist.avatarB}" alt="" class="distance-avatar"></span>
+        <span class="distance-avatar-wrap${dodo}"><img src="${dist.avatarB}" alt="" class="distance-avatar" data-nom="Lorvencia"></span>
         <span>${escapeHtml(dist.villeB)}</span>
       </div>
     </div>
     <div class="distance-km">≈ ${dist.km} km</div>
-    <p class="distance-note">${estNuit() ? 'Il est tard, on dort chacun de notre côté, mais toujours tout près dans mon cœur.' : 'Quelques kilomètres, mais toujours tout près dans mon cœur.'}</p>
+    <p class="distance-note">${messageMoment()}</p>
   `;
+
+  // Petite bulle tendre au clic sur un Bitmoji
+  page.querySelectorAll('.distance-avatar').forEach(img => {
+    img.addEventListener('click', () => {
+      const wrap = img.closest('.distance-avatar-wrap');
+      const message = estNuit() ? 'Bonne nuit' : 'Je pense à toi';
+      const bulle = el(`<span class="avatar-bulle">${escapeHtml(message)}</span>`);
+      wrap.appendChild(bulle);
+      requestAnimationFrame(() => bulle.classList.add('visible'));
+      setTimeout(() => { bulle.classList.remove('visible'); setTimeout(() => bulle.remove(), 300); }, 1800);
+    });
+  });
 
   // Météo
   loadWeather(page.querySelector('#weather-box'));
